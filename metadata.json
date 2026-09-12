@@ -1,0 +1,6 @@
+{
+  "name": "Органомодификация бентонита",
+  "description": "Автономный расчет потенциала органомодификации (ИОМ), минерального состава примесей по РФА, применимости по отраслям и реологии органоглин.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
