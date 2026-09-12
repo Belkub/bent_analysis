@@ -8,6 +8,11 @@ interface ModalImpuritiesCalcProps {
   onClose: () => void;
   impurities: ImpurityCalculationDetails;
   colorId: BentoniteColorId;
+  effectiveSmectite?: number;
+  smectiteSource?: 'input' | 'xrf_calc' | 'cec_matrix';
+  cecStandardUsed?: number;
+  cec?: number;
+  inputSmectite?: number;
 }
 
 export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
@@ -15,6 +20,11 @@ export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
   onClose,
   impurities,
   colorId,
+  effectiveSmectite,
+  smectiteSource = 'input',
+  cecStandardUsed = 100,
+  cec,
+  inputSmectite,
 }) => {
   if (!isOpen) return null;
 
@@ -177,6 +187,83 @@ export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
                     ? 'ℹ️ Умеренный балласт (10–20%): применим для базовых буровых марок и битумных мастик.'
                     : '✅ Высокая чистота (балласт < 10%): отличная база для дисперсионной ОМ.'}
                 </p>
+              </div>
+
+              {/* Step 6: 3-Level Smectite Interpretation Rules */}
+              <div className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-stone-900 text-sm flex items-center gap-2">
+                    <Info className="w-4 h-4 text-blue-700" />
+                    Правило выбора содержания смектита для интерпретации данных
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-blue-700 text-white font-mono text-xs font-bold">
+                    Использовано: {effectiveSmectite ?? impurities.estimatedSmectite}%
+                  </span>
+                </div>
+                <p className="text-stone-600 text-xs leading-relaxed">
+                  В соответствии с регламентом анализа, для оценки пригодности бентонита по отраслям действует строгая иерархия из 3 уровней:
+                </p>
+                <div className="space-y-2 text-xs">
+                  <div
+                    className={`p-2.5 rounded-lg border transition-colors ${
+                      smectiteSource === 'input'
+                        ? 'bg-emerald-100/70 border-emerald-300 font-medium text-emerald-950 shadow-xs'
+                        : 'bg-white border-stone-200 text-stone-700 opacity-75'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-0.5">
+                      <strong>1. Ручной ввод смектита (Высший приоритет)</strong>
+                      {smectiteSource === 'input' && (
+                        <span className="text-[10px] bg-emerald-700 text-white px-1.5 py-0.2 rounded-sm font-bold">
+                          АКТИВЕН: {inputSmectite}%
+                        </span>
+                      )}
+                    </div>
+                    <span>
+                      Если в разделе «Физико-химические параметры» заполнено поле «Содержание смектита», именно эта цифра используется для всех выходных заключений.
+                    </span>
+                  </div>
+
+                  <div
+                    className={`p-2.5 rounded-lg border transition-colors ${
+                      smectiteSource === 'cec_matrix'
+                        ? 'bg-blue-100/80 border-blue-300 font-medium text-blue-950 shadow-xs'
+                        : 'bg-white border-stone-200 text-stone-700 opacity-75'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-0.5">
+                      <strong>2. Пересчет по КОЕ (файл смектит.pdf)</strong>
+                      {smectiteSource === 'cec_matrix' && (
+                        <span className="text-[10px] bg-blue-700 text-white px-1.5 py-0.2 rounded-sm font-bold">
+                          АКТИВЕН: {effectiveSmectite}% (КОЕ = {cec} мг-экв, эталон {cecStandardUsed} мг-экв)
+                        </span>
+                      )}
+                    </div>
+                    <span>
+                      Если поле «Содержание смектита» не заполнено, но заполнено «КОЕ бентонита», пересчет выполняется по формуле: <code>C_смектит = (КОЕ / {cecStandardUsed} мг-экв) × 100%</code>. По умолчанию строго используется таблица для <strong>Высокозарядного смектита (эталон 120 мг-экв)</strong>, с возможностью переключения в форме на среднезарядный (110) или низкозарядный (100).
+                    </span>
+                  </div>
+
+                  <div
+                    className={`p-2.5 rounded-lg border transition-colors ${
+                      smectiteSource === 'xrf_calc'
+                        ? 'bg-amber-100/70 border-amber-300 font-medium text-amber-950 shadow-xs'
+                        : 'bg-white border-stone-200 text-stone-700 opacity-75'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-0.5">
+                      <strong>3. Минеральный расчет по РФА (файл таблица_2.pdf)</strong>
+                      {smectiteSource === 'xrf_calc' && (
+                        <span className="text-[10px] bg-amber-700 text-white px-1.5 py-0.2 rounded-sm font-bold">
+                          АКТИВЕН: {effectiveSmectite}%
+                        </span>
+                      )}
+                    </div>
+                    <span>
+                      Если оба поля («Содержание смектита» и «КОЕ бентонита») не заполнены, концентрация смектита вычисляется как разница: <code>100% - Балласт ({impurities.totalBallast}%) = {impurities.estimatedSmectite}%</code>.
+                    </span>
+                  </div>
+                </div>
               </div>
             </>
           )}

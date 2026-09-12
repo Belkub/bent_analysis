@@ -147,32 +147,40 @@ export function calculateAnalysis(input: BentoniteInputData): AnalysisResults {
   };
 
   // 8. Effective Smectite determination logic:
-  // "Если во входных данных есть только значение КОЕ (а смектита нет, то для работы с данными
-  // концентрация смектита (в %) определяется по алгоритму в файле табл_2.pdf, а если данных РФА по
-  // оксидам не хватает, то содержание смектита определяется по таблице в файле Смектит.pdf."
+  // Приоритет 1: Если заполнено 'содержание смектита', то эта цифра используется для интерпретации выводных данных.
+  // Приоритет 2: Если 'содержание смектита' НЕ заполнено, а заполнено только 'КОЕ бентонита',
+  // то это значение пересчитывается (по табл в файле смектит.pdf) на содержание смектита,
+  // которое потом используется для интерпретации всех выходных данных.
+  // Приоритет 3: Если же оба поля ('содержание смектита' и 'КОЕ бентонита') НЕ заполнены,
+  // то расчет концентрации смектита в бентоните идет по алгоритму в файле таблица_2.pdf.
   let effectiveSmectite = 0;
   let smectiteSource: 'input' | 'xrf_calc' | 'cec_matrix' = 'input';
   let cecStandardUsed: number | undefined = undefined;
 
-  if (input.smectite !== undefined && input.smectite > 0) {
-    effectiveSmectite = input.smectite;
+  const isSmectiteFilled = input.smectite !== undefined && !isNaN(input.smectite) && input.smectite > 0;
+  const isCecFilled = input.cec !== undefined && !isNaN(input.cec) && input.cec > 0;
+
+  if (isSmectiteFilled) {
+    // Приоритет 1: Пользователь ввел содержание смектита напрямую
+    effectiveSmectite = input.smectite!;
     smectiteSource = 'input';
-  } else if (hasCoreOxides) {
-    effectiveSmectite = estimatedSmectite;
-    smectiteSource = 'xrf_calc';
-  } else if (input.cec !== undefined && input.cec > 0) {
+  } else if (isCecFilled) {
+    // Приоритет 2: Смектит не введен, но заполнено КОЕ -> пересчет по таблице смектит.pdf
     smectiteSource = 'cec_matrix';
-    // Decide standard: 100 meq (standard sodium / moderate), 110 meq (intermediate), 120 meq (high-charge Caucasian)
-    if (bentoniteType === 'natural_sodium') {
-      cecStandardUsed = 100;
-    } else if (input.cec > 105) {
-      cecStandardUsed = 120;
-    } else if (input.cec > 85) {
-      cecStandardUsed = 110;
-    } else {
-      cecStandardUsed = 100;
-    }
-    effectiveSmectite = Math.min(100, Math.round((input.cec / cecStandardUsed) * 100));
+    // По умолчанию строго используется таблица для Высокозарядного смектита (Эталон: 120 мг-экв) из смектит.pdf,
+    // либо опция переключения на низкозарядный (100) или среднезарядный (110)
+    cecStandardUsed = input.cecStandard ?? 120;
+
+    // Формула из смектит.pdf: C_смектит = (КОЕ_образца / КОЕ_чистой_фазы) * 100%
+    const calculatedSmectiteFromCec = Math.min(
+      100,
+      Math.round((input.cec! / cecStandardUsed) * 100)
+    );
+    effectiveSmectite = calculatedSmectiteFromCec;
+  } else {
+    // Приоритет 3: Оба поля (смектит и КОЕ) НЕ заполнены -> расчет по алгоритму таблица_2.pdf
+    smectiteSource = 'xrf_calc';
+    effectiveSmectite = hasCoreOxides ? estimatedSmectite : 0;
   }
 
   // 9. IOM Index Calculation (иом.doc)

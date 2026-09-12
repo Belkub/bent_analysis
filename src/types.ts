@@ -51,6 +51,7 @@ export interface BentoniteInputData {
   oxides: OxideComposition;
   swellingIndex?: number; // см3/2г
   cec?: number;           // КОЕ, мг-экв/100г
+  cecStandard?: 100 | 110 | 120; // эталон чистого смектита (смектит.pdf)
   smectite?: number;      // %
   sand?: number;          // %
   activation: boolean;

@@ -34,6 +34,7 @@ export default function App() {
   // 3. Physical Parameters State
   const [swellingIndex, setSwellingIndex] = useState<number | undefined>(BENCHMARK_PRESETS[0].data.swellingIndex);
   const [cec, setCec] = useState<number | undefined>(BENCHMARK_PRESETS[0].data.cec);
+  const [cecStandard, setCecStandard] = useState<100 | 110 | 120>(BENCHMARK_PRESETS[0].data.cecStandard ?? 120);
   const [smectite, setSmectite] = useState<number | undefined>(BENCHMARK_PRESETS[0].data.smectite);
   const [sand, setSand] = useState<number | undefined>(BENCHMARK_PRESETS[0].data.sand);
 
@@ -56,6 +57,7 @@ export default function App() {
     setOxides({ ...preset.data.oxides });
     setSwellingIndex(preset.data.swellingIndex);
     setCec(preset.data.cec);
+    setCecStandard(preset.data.cecStandard ?? 120);
     setSmectite(preset.data.smectite);
     setSand(preset.data.sand);
     setActivation(preset.data.activation);
@@ -71,6 +73,7 @@ export default function App() {
     setOxides({});
     setSwellingIndex(undefined);
     setCec(undefined);
+    setCecStandard(120);
     setSmectite(undefined);
     setSand(undefined);
     setActivation(false);
@@ -98,6 +101,7 @@ export default function App() {
       oxides,
       swellingIndex,
       cec,
+      cecStandard,
       smectite,
       sand,
       activation,
@@ -109,6 +113,7 @@ export default function App() {
     oxides,
     swellingIndex,
     cec,
+    cecStandard,
     smectite,
     sand,
     activation,
@@ -154,13 +159,19 @@ export default function App() {
           <PhysicalParamsInput
             swellingIndex={swellingIndex}
             cec={cec}
+            cecStandard={cecStandard}
             smectite={smectite}
             sand={sand}
             activation={activation}
             sodaPercent={sodaPercent}
             apiTest={apiTest}
+            effectiveSmectite={analysisResults.effectiveSmectite}
+            smectiteSource={analysisResults.smectiteSource}
+            cecStandardUsed={analysisResults.cecStandardUsed}
+            xrfSmectite={analysisResults.impurities.estimatedSmectite}
             onChangeSwelling={setSwellingIndex}
             onChangeCec={setCec}
+            onChangeCecStandard={setCecStandard}
             onChangeSmectite={setSmectite}
             onChangeSand={setSand}
             onChangeActivation={setActivation}
@@ -247,6 +258,11 @@ export default function App() {
         onClose={() => setActiveModal('none')}
         impurities={analysisResults.impurities}
         colorId={selectedColorId}
+        effectiveSmectite={analysisResults.effectiveSmectite}
+        smectiteSource={analysisResults.smectiteSource}
+        cecStandardUsed={analysisResults.cecStandardUsed}
+        cec={cec}
+        inputSmectite={smectite}
       />
 
       <ModalColorInterpretation

@@ -145,39 +145,57 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               </span>
               <FileSpreadsheet className="w-4 h-4 text-amber-700" />
             </div>
-            {impurities.isSufficientData ? (
+
+            <div className="flex items-baseline justify-between mb-2">
               <div>
-                <div className="flex items-baseline justify-between">
-                  <div>
-                    <span className="text-xs text-stone-500 block">Балласт:</span>
-                    <span className="text-2xl font-bold font-mono text-stone-900">
-                      {impurities.totalBallast}%
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs text-stone-500 block">Смектит:</span>
-                    <span className="text-2xl font-bold font-mono text-emerald-700">
-                      {results.effectiveSmectite}%
-                    </span>
-                  </div>
-                </div>
-                <div className="text-[11px] text-stone-500 mt-2 flex flex-wrap gap-x-2">
-                  <span>Песок: {impurities.freeSiO2}%</span>
-                  <span>Мел: {impurities.calciteCaCO3}%</span>
-                  <span>Fe-балл: {impurities.ironBallast}%</span>
-                </div>
+                <span className="text-xs text-stone-500 block">Балласт (РФА):</span>
+                <span className="text-2xl font-bold font-mono text-stone-900">
+                  {impurities.isSufficientData ? `${impurities.totalBallast}%` : '—'}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-stone-500 block">Смектит (расчетный):</span>
+                <span className="text-2xl font-bold font-mono text-emerald-700">
+                  {results.effectiveSmectite}%
+                </span>
+              </div>
+            </div>
+
+            {/* Smectite source tag */}
+            <div className="mb-2">
+              <span
+                className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded-md font-semibold ${
+                  results.smectiteSource === 'input'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    : results.smectiteSource === 'cec_matrix'
+                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                    : 'bg-amber-100 text-amber-800 border border-amber-200'
+                }`}
+              >
+                {results.smectiteSource === 'input' && '✓ Введено напрямую (Приоритет 1)'}
+                {results.smectiteSource === 'cec_matrix' &&
+                  `⚙️ По КОЕ (смектит.pdf: ${
+                    results.cecStandardUsed === 120
+                      ? 'Высокозарядный, 120 мг-экв'
+                      : results.cecStandardUsed === 110
+                      ? 'Среднезарядный, 110 мг-экв'
+                      : 'Низкозарядный, 100 мг-экв'
+                  }) (Приоритет 2)`}
+                {results.smectiteSource === 'xrf_calc' && '🔬 По РФА (табл_2.pdf: 100% - балласт) (Приоритет 3)'}
+              </span>
+            </div>
+
+            {impurities.isSufficientData ? (
+              <div className="text-[11px] text-stone-500 flex flex-wrap gap-x-2 border-t border-stone-100 pt-1.5">
+                <span>Песок: {impurities.freeSiO2}%</span>
+                <span>Мел: {impurities.calciteCaCO3}%</span>
+                <span>Fe-балл: {impurities.ironBallast}%</span>
+                <span>Шпаты: {impurities.orthoclase}%</span>
               </div>
             ) : (
-              <div>
-                <span className="text-xs text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 block">
-                  Недостаточно оксидов для расчета минерального балласта.
-                </span>
-                {results.effectiveSmectite > 0 && (
-                  <div className="mt-2 text-xs text-stone-600">
-                    Смектит по КОЕ: <strong className="font-mono">{results.effectiveSmectite}%</strong>
-                  </div>
-                )}
-              </div>
+              <span className="text-[10px] text-amber-800 bg-amber-50 p-1.5 rounded-md border border-amber-200 block">
+                Недостаточно оксидов РФА для полного минерального балласта.
+              </span>
             )}
           </div>
           <button
@@ -186,7 +204,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             onClick={onOpenImpuritiesModal}
             className="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-xs text-amber-700 font-semibold hover:text-amber-900 w-full"
           >
-            <span>Подробный баланс примесей</span>
+            <span>Подробный баланс примесей и смектита</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>

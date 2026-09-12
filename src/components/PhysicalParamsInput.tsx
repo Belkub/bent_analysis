@@ -5,13 +5,19 @@ import { ApiTestData } from '../types';
 interface PhysicalParamsInputProps {
   swellingIndex?: number;
   cec?: number;
+  cecStandard?: 100 | 110 | 120;
   smectite?: number;
   sand?: number;
   activation: boolean;
   sodaPercent?: number;
   apiTest: ApiTestData;
+  effectiveSmectite?: number;
+  smectiteSource?: 'input' | 'xrf_calc' | 'cec_matrix';
+  cecStandardUsed?: number;
+  xrfSmectite?: number;
   onChangeSwelling: (val: number | undefined) => void;
   onChangeCec: (val: number | undefined) => void;
+  onChangeCecStandard?: (val: 100 | 110 | 120 | undefined) => void;
   onChangeSmectite: (val: number | undefined) => void;
   onChangeSand: (val: number | undefined) => void;
   onChangeActivation: (val: boolean) => void;
@@ -22,13 +28,19 @@ interface PhysicalParamsInputProps {
 export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
   swellingIndex,
   cec,
+  cecStandard,
   smectite,
   sand,
   activation,
   sodaPercent,
   apiTest,
+  effectiveSmectite,
+  smectiteSource = 'input',
+  cecStandardUsed = 100,
+  xrfSmectite,
   onChangeSwelling,
   onChangeCec,
+  onChangeCecStandard,
   onChangeSmectite,
   onChangeSand,
   onChangeActivation,
@@ -126,68 +138,165 @@ export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
         </div>
 
         {/* CEC / КОЕ */}
-        <div className="rounded-lg border border-stone-200 p-3 bg-stone-50/50 hover:bg-white transition-colors">
-          <div className="flex items-center justify-between mb-1">
-            <label htmlFor="input-cec" className="block text-xs font-semibold text-stone-800">
-              КОЕ бентонита
-            </label>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-sm bg-amber-100 text-amber-800 font-medium">
-              Ключ для ИОМ
-            </span>
+        <div className="rounded-lg border border-stone-200 p-3 bg-stone-50/50 hover:bg-white transition-colors flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="input-cec" className="block text-xs font-semibold text-stone-800">
+                КОЕ бентонита
+              </label>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-sm bg-amber-100 text-amber-800 font-medium">
+                Ключ для ИОМ
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                placeholder="напр. 85"
+                id="input-cec"
+                value={cec !== undefined ? cec : ''}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  onChangeCec(isNaN(val) ? undefined : val);
+                }}
+                className="w-full text-sm font-semibold text-stone-900 bg-white rounded-md border border-stone-300 px-2.5 py-1.5 pr-20 focus:outline-hidden focus:ring-2 focus:ring-amber-600 transition-all text-right"
+              />
+              <span className="absolute right-2 top-2 text-xs text-stone-400 pointer-events-none font-mono">
+                мг-экв/100г
+              </span>
+            </div>
           </div>
-          <div className="relative">
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              placeholder="напр. 85"
-              id="input-cec"
-              value={cec !== undefined ? cec : ''}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                onChangeCec(isNaN(val) ? undefined : val);
-              }}
-              className="w-full text-sm font-semibold text-stone-900 bg-white rounded-md border border-stone-300 px-2.5 py-1.5 pr-20 focus:outline-hidden focus:ring-2 focus:ring-amber-600 transition-all text-right"
-            />
-            <span className="absolute right-2 top-2 text-xs text-stone-400 pointer-events-none font-mono">
-              мг-экв/100г
-            </span>
+
+          {/* Standard selector from смектит.pdf */}
+          <div className="mt-2.5 pt-2 border-t border-stone-200/80">
+            <div className="flex items-center justify-between text-[10px] text-stone-600 mb-1.5 font-medium">
+              <span>Тип смектита для КОЕ (смектит.pdf):</span>
+              <span className="font-semibold text-stone-900 bg-stone-100 px-1.5 py-0.5 rounded text-[10px]">
+                {cecStandardUsed === 120
+                  ? 'Высокозарядный (120)'
+                  : cecStandardUsed === 110
+                  ? 'Среднезарядный (110)'
+                  : 'Низкозарядный (100)'}
+              </span>
+            </div>
+            {onChangeCecStandard && (
+              <div className="grid grid-cols-3 gap-1 text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => onChangeCecStandard(120)}
+                  title="Высокозарядный монтмориллонит (Эталон: 120 мг-экв) — ПО УМОЛЧАНИЮ. Применяется для кавказских и североамериканских бентонитов с высокой плотностью заряда."
+                  className={`px-1.5 py-1 rounded text-center font-medium border transition-all ${
+                    (cecStandard === 120 || (!cecStandard && cecStandardUsed === 120))
+                      ? 'bg-amber-700 text-white border-amber-700 font-bold shadow-xs'
+                      : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                  }`}
+                >
+                  <span className="block leading-tight">120 мг-экв</span>
+                  <span className="text-[9px] opacity-90 font-normal">Высокозарядный (по умолч.)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeCecStandard(110)}
+                  title="Среднезарядный смектит (Эталон: 110 мг-экв). Характерен для переходных глин (Азия, Сев. Африка)."
+                  className={`px-1.5 py-1 rounded text-center font-medium border transition-all ${
+                    (cecStandard === 110 || (!cecStandard && cecStandardUsed === 110))
+                      ? 'bg-amber-700 text-white border-amber-700 font-bold shadow-xs'
+                      : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                  }`}
+                >
+                  <span className="block leading-tight">110 мг-экв</span>
+                  <span className="text-[9px] opacity-90 font-normal">Среднезарядный</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeCecStandard(100)}
+                  title="Низкозарядный смектит (Эталон: 100 мг-экв). Подходит для большинства стандартных натриевых и щелочноземельных бентонитов (1 мг-экв ≈ 1%)."
+                  className={`px-1.5 py-1 rounded text-center font-medium border transition-all ${
+                    (cecStandard === 100 || (!cecStandard && cecStandardUsed === 100))
+                      ? 'bg-amber-700 text-white border-amber-700 font-bold shadow-xs'
+                      : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
+                  }`}
+                >
+                  <span className="block leading-tight">100 мг-экв</span>
+                  <span className="text-[9px] opacity-90 font-normal">Низкозарядный</span>
+                </button>
+              </div>
+            )}
           </div>
-          <span className="text-[10px] text-stone-500 mt-1 block">
-            Оптимум: 70–95 (штраф при КОЕ &gt; 100)
-          </span>
         </div>
 
         {/* Smectite % */}
-        <div className="rounded-lg border border-stone-200 p-3 bg-stone-50/50 hover:bg-white transition-colors">
-          <div className="flex items-center justify-between mb-1">
-            <label htmlFor="input-smectite" className="block text-xs font-semibold text-stone-800">
-              Содержание смектита
-            </label>
-            <span className="text-[10px] text-stone-400">Авто-расчет</span>
+        <div
+          className={`rounded-lg border p-3 transition-colors flex flex-col justify-between ${
+            smectite !== undefined && smectite > 0
+              ? 'border-emerald-300 bg-emerald-50/30'
+              : smectiteSource === 'cec_matrix'
+              ? 'border-blue-300 bg-blue-50/30'
+              : 'border-stone-200 bg-stone-50/50'
+          }`}
+        >
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="input-smectite" className="block text-xs font-semibold text-stone-800">
+                Содержание смектита
+              </label>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-sm font-medium ${
+                  smectite !== undefined && smectite > 0
+                    ? 'bg-emerald-100 text-emerald-800 font-semibold'
+                    : smectiteSource === 'cec_matrix'
+                    ? 'bg-blue-100 text-blue-800 font-semibold'
+                    : 'bg-amber-100 text-amber-800 font-semibold'
+                }`}
+              >
+                {smectite !== undefined && smectite > 0
+                  ? 'Приоритет 1 (Ввод)'
+                  : smectiteSource === 'cec_matrix'
+                  ? 'Приоритет 2 (по КОЕ)'
+                  : 'Приоритет 3 (по РФА)'}
+              </span>
+            </div>
+            <div className="relative">
+              <input
+                type="number"
+                step="0.5"
+                min="0"
+                max="100"
+                placeholder={
+                  effectiveSmectite !== undefined && effectiveSmectite > 0
+                    ? `расчет: ${effectiveSmectite}%`
+                    : 'расчет из КОЕ / РФА'
+                }
+                id="input-smectite"
+                value={smectite !== undefined ? smectite : ''}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  onChangeSmectite(isNaN(val) ? undefined : val);
+                }}
+                className="w-full text-sm font-semibold text-stone-900 bg-white rounded-md border border-stone-300 px-2.5 py-1.5 pr-7 focus:outline-hidden focus:ring-2 focus:ring-amber-600 transition-all text-right placeholder:text-stone-400 placeholder:text-xs"
+              />
+              <span className="absolute right-2 top-2 text-xs text-stone-400 pointer-events-none">
+                %
+              </span>
+            </div>
           </div>
-          <div className="relative">
-            <input
-              type="number"
-              step="0.5"
-              min="0"
-              max="100"
-              placeholder="расчет из РФА / КОЕ"
-              id="input-smectite"
-              value={smectite !== undefined ? smectite : ''}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                onChangeSmectite(isNaN(val) ? undefined : val);
-              }}
-              className="w-full text-sm font-semibold text-stone-900 bg-white rounded-md border border-stone-300 px-2.5 py-1.5 pr-7 focus:outline-hidden focus:ring-2 focus:ring-amber-600 transition-all text-right placeholder:text-stone-400 placeholder:text-xs"
-            />
-            <span className="absolute right-2 top-2 text-xs text-stone-400 pointer-events-none">
-              %
-            </span>
+
+          <div className="mt-2 text-[10px] leading-tight">
+            {smectite !== undefined && smectite > 0 ? (
+              <span className="text-emerald-700 font-medium block">
+                ✓ Введено вручную ({smectite}%). Эта цифра напрямую используется для интерпретации всех данных.
+              </span>
+            ) : smectiteSource === 'cec_matrix' ? (
+              <span className="text-blue-700 font-medium block">
+                ⚙️ Пересчитано по КОЕ ({cec} мг-экв → <strong className="font-bold">{effectiveSmectite}%</strong> по эталону {cecStandardUsed === 120 ? 'Высокозарядного (120 мг-экв)' : cecStandardUsed === 110 ? 'Среднезарядного (110 мг-экв)' : 'Низкозарядного (100 мг-экв)'}, файл смектит.pdf). Используется для всех выводов.
+              </span>
+            ) : (
+              <span className="text-amber-800 font-medium block">
+                🔬 Расчет по алгоритму табл_2.pdf (<strong className="font-bold">{effectiveSmectite ?? 0}%</strong>, 100% - Балласт). Используется для всех выводов.
+              </span>
+            )}
           </div>
-          <span className="text-[10px] text-stone-500 mt-1 block">
-            Если не введено, берется из табл. 2 или Смектит.pdf
-          </span>
         </div>
 
         {/* Sand % */}
