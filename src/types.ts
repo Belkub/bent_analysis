@@ -67,10 +67,11 @@ export type BentoniteType =
   | 'insufficient_data';    // Данных недостаточно
 
 export type ApiModel =
-  | 'non_treated'    // YP/PV <= 1.5 & ф600 >= 30: наилучшая для ОМ
-  | 'drilling_grade' // YP/PV <= 3 & ф600 >= 30: хорошая для ОМ
-  | 'ocma'           // YP/PV <= 6 & ф600 >= 30: приемлемая для ОМ
-  | 'non_standard';  // ф600 < 30 или YP/PV > 6
+  | 'non_treated'    // YP/PV <= 1.5: наилучшая для ОМ
+  | 'drilling_grade' // YP/PV <= 3: хорошая для ОМ
+  | 'ocma'           // YP/PV <= 6: приемлемая для ОМ
+  | 'marginal_ocma'  // YP/PV 6..8: ограниченно пригоден для ОМ (среднесортная ОГ)
+  | 'non_standard';  // ф600 < 18 или YP/PV > 8
 
 export interface ImpurityCalculationDetails {
   na2o: number;
@@ -143,6 +144,8 @@ export interface AnalysisResults {
     pv: number;
     yp: number;
     ratio: number;
+    suitabilitySummary?: string;
+    recommendation?: string;
   };
   suitableIndustries: IndustrySuitability[];
   allIndustries: IndustrySuitability[];

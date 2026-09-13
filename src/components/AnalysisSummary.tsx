@@ -223,12 +223,39 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             </div>
             {apiModel ? (
               <div>
-                <span className="text-sm font-bold text-stone-900 block">
-                  {apiModel.label}
-                </span>
+                <div className="flex items-start justify-between gap-1.5 mb-1">
+                  <span className="text-sm font-bold text-stone-900 leading-tight">
+                    {apiModel.label}
+                  </span>
+                  {apiModel.suitabilitySummary && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
+                        apiModel.model === 'non_treated'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : apiModel.model === 'drilling_grade'
+                          ? 'bg-blue-100 text-blue-800'
+                          : apiModel.model === 'ocma'
+                          ? 'bg-amber-100 text-amber-800'
+                          : apiModel.model === 'marginal_ocma'
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-stone-100 text-stone-700'
+                      }`}
+                    >
+                      {apiModel.suitabilitySummary}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-stone-600 mt-1 leading-snug">
                   {apiModel.description}
                 </p>
+
+                {apiModel.recommendation && (
+                  <div className="mt-2 text-[11px] font-medium text-amber-900 bg-amber-50/90 border border-amber-200/80 rounded px-2 py-1 flex items-start gap-1">
+                    <span className="shrink-0 font-bold">💡</span>
+                    <span>{apiModel.recommendation}</span>
+                  </div>
+                )}
+
                 <div className="mt-2 flex items-center gap-2 text-xs font-mono text-stone-700">
                   <span>PV: {apiModel.pv}</span>
                   <span>|</span>
@@ -246,7 +273,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
           <div className="mt-3 pt-2 border-t border-stone-100 text-[11px] text-stone-500">
             {apiModel?.ratio !== undefined && apiModel.ratio <= 1.5
               ? '🎯 Идеал: YP/PV ≤ 1.5 и ф600 ≥ 30'
-              : 'Критерии: non-treated ≤ 1.5, drilling ≤ 3, OCMA ≤ 6'}
+              : 'Критерии: non-treated ≤ 1.5, drilling ≤ 3, OCMA ≤ 6, среднесортная ОГ 6–8'}
           </div>
         </div>
       </div>

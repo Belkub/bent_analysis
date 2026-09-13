@@ -84,10 +84,15 @@ export default function App() {
   };
 
   const handleOxideChange = (key: keyof OxideComposition, value: number | undefined) => {
-    setOxides((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setOxides((prev) => {
+      const next = { ...prev };
+      if (value === undefined || isNaN(value)) {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
   };
 
   const handleApplyAllOxides = (newOxides: OxideComposition) => {

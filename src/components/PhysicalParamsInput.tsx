@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sliders, Beaker, CheckSquare, Square, Calculator, Sparkles, HelpCircle } from 'lucide-react';
 import { ApiTestData } from '../types';
+import { evaluateApiRheology } from '../utils/bentoniteAnalyzer';
 
 interface PhysicalParamsInputProps {
   swellingIndex?: number;
@@ -477,25 +478,56 @@ export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
               </div>
             </div>
 
-            {/* Ratio indicator */}
-            {calculatedRatio && (
-              <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-stone-200 text-xs">
-                <span className="text-stone-600 font-medium">Соотношение YP / PV:</span>
-                <span className="font-bold text-stone-900 font-mono text-sm">
-                  {calculatedRatio}
-                </span>
-                <span className="text-stone-400">|</span>
-                <span className="text-stone-600">
-                  {parseFloat(calculatedRatio) <= 1.5 && (apiTest.f600 ?? 0) >= 30
-                    ? '🎯 Превосходно: соответствует модели "non-treated" (наилучшая для ОМ)'
-                    : parseFloat(calculatedRatio) <= 3.0 && (apiTest.f600 ?? 0) >= 30
-                    ? '✅ Хорошо: соответствует модели "drilling grade" (хорошая для ОМ)'
-                    : parseFloat(calculatedRatio) <= 6.0 && (apiTest.f600 ?? 0) >= 30
-                    ? '⚠️ Приемлемо: соответствует модели "OCMA"'
-                    : 'Не соответствует требованиям API для качественной ОМ'}
-                </span>
-              </div>
-            )}
+            {/* Ratio indicator & OM suitability evaluation */}
+            {calculatedRatio && (() => {
+              const f600Val = apiTest.f600 ?? 0;
+              const f300Val = apiTest.f300 ?? 0;
+              const evalRes = evaluateApiRheology(f600Val, f300Val, apiTest.pv, apiTest.yp);
+
+              return (
+                <div className="p-3 bg-white rounded-lg border border-stone-200 text-xs space-y-2 shadow-2xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-stone-600 font-medium">Соотношение YP / PV:</span>
+                      <span className="font-bold text-stone-900 font-mono text-sm bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+                        {calculatedRatio}
+                      </span>
+                      <span className="text-stone-300">|</span>
+                      <span className="font-semibold text-stone-800">
+                        {evalRes.label}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
+                        evalRes.model === 'non_treated'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : evalRes.model === 'drilling_grade'
+                          ? 'bg-blue-100 text-blue-800'
+                          : evalRes.model === 'ocma'
+                          ? 'bg-amber-100 text-amber-800'
+                          : evalRes.model === 'marginal_ocma'
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-stone-100 text-stone-700'
+                      }`}
+                    >
+                      {evalRes.suitabilitySummary}
+                    </span>
+                  </div>
+
+                  <p className="text-stone-600 text-xs leading-relaxed">
+                    {evalRes.description}
+                  </p>
+
+                  {evalRes.recommendation && (
+                    <div className="text-[11px] font-medium text-amber-900 bg-amber-50/90 border border-amber-200 rounded px-2.5 py-1.5 flex items-start gap-1.5">
+                      <span className="shrink-0 font-bold">💡 Рекомендация:</span>
+                      <span>{evalRes.recommendation}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
