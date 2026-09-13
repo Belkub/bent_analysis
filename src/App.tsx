@@ -7,12 +7,16 @@ import {
   HelpCircle,
   FlaskConical,
   ChevronDown,
-  ArrowDown
+  ArrowDown,
+  FileDown,
+  Loader2
 } from 'lucide-react';
 import { BentoniteColorId, OxideComposition, ApiTestData, BenchmarkPreset } from './types';
 import { BENCHMARK_PRESETS, BENTONITE_COLORS } from './data/mineralData';
 import { analyzeBentonite } from './utils/bentoniteAnalyzer';
+import { generateBentonitePdfReport } from './utils/pdfReportGenerator';
 import { Header } from './components/Header';
+import { SampleInfoInput } from './components/SampleInfoInput';
 import { ColorInput } from './components/ColorInput';
 import { OxideTableInput } from './components/OxideTableInput';
 import { PhysicalParamsInput } from './components/PhysicalParamsInput';
@@ -24,6 +28,10 @@ import { ModalMillingMethods } from './components/modals/ModalMillingMethods';
 import { ModalIomDetails } from './components/modals/ModalIomDetails';
 
 export default function App() {
+  // 0. Sample Identifier
+  const [sampleName, setSampleName] = useState<string>('Бентонит МТ-06');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+
   // 1. Color State
   const [selectedColorId, setSelectedColorId] = useState<BentoniteColorId>('yellow_brown');
   const [clayPhotoUrl, setClayPhotoUrl] = useState<string | undefined>(undefined);
@@ -53,6 +61,7 @@ export default function App() {
 
   // Load a benchmark sample
   const handleSelectPreset = (preset: BenchmarkPreset) => {
+    setSampleName(preset.name);
     setSelectedColorId(preset.data.colorId);
     setOxides({ ...preset.data.oxides });
     setSwellingIndex(preset.data.swellingIndex);
@@ -69,6 +78,7 @@ export default function App() {
 
   // Reset form to blank
   const handleReset = () => {
+    setSampleName('');
     setSelectedColorId('creamy_white');
     setOxides({});
     setSwellingIndex(undefined);
@@ -136,6 +146,34 @@ export default function App() {
     }, 50);
   };
 
+  // Generate and download full official laboratory PDF report
+  const handleDownloadPdf = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    try {
+      await generateBentonitePdfReport({
+        sampleName,
+        photoUrl: clayPhotoUrl,
+        colorId: selectedColorId,
+        oxides,
+        swellingIndex,
+        cec,
+        cecStandard,
+        smectite,
+        sand,
+        activation,
+        sodaPercent,
+        apiTest,
+        analysisResults,
+      });
+    } catch (err) {
+      console.error('Failed to generate PDF report:', err);
+      alert('Произошла ошибка при экспорте PDF файла.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col font-sans selection:bg-amber-200">
       {/* Top Header with Sample Presets */}
@@ -145,6 +183,12 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Input Form Cards */}
         <div className="space-y-5">
+          {/* Sample Identification Field */}
+          <SampleInfoInput
+            sampleName={sampleName}
+            onChangeSampleName={setSampleName}
+          />
+
           {/* Section 1: Color Classifier */}
           <ColorInput
             selectedColorId={selectedColorId}
@@ -196,7 +240,7 @@ export default function App() {
                 Анализ потенциала бентонита к органомодификации
               </h3>
               <p className="text-xs text-stone-400">
-                Автономный алгоритм по табл_1, табл_2, иом.doc, Реология ОГ.pdf и ОГ помол.pdf
+                Автономный комплекс минералогической и реологической оценки
               </p>
             </div>
           </div>
@@ -218,21 +262,47 @@ export default function App() {
         {/* Results View */}
         {hasAnalyzed && (
           <div className="pt-2">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 bg-white p-4 sm:p-5 rounded-xl border border-stone-200 shadow-xs">
               <div>
                 <h2 className="text-lg font-extrabold text-stone-900 flex items-center gap-2">
                   <FileCheck2 className="w-5 h-5 text-emerald-700" />
-                  Результаты анализа бентонита
+                  <span>Результаты анализа: {sampleName.trim() ? sampleName : 'Исследуемый образец'}</span>
                 </h2>
-                <p className="text-xs text-stone-500">
-                  Сводный отчет о пригодности сырья, минералогическом балансе и рекомендуемых режимах
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Сводный отчет о пригодности сырья, минералогическом балансе и рекомендуемых режимах ОГ
                 </p>
               </div>
+
+              {/* PDF Download Button in Results Header */}
+              <button
+                type="button"
+                id="download-pdf-report-btn"
+                onClick={handleDownloadPdf}
+                disabled={isGeneratingPdf}
+                className="px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-98 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
+                title="Сформировать и скачать полный 2-страничный PDF-паспорт образца"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-amber-200" />
+                    <span>Формирование PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-4 h-4 text-amber-200" />
+                    <span>Скачать PDF отчет</span>
+                  </>
+                )}
+              </button>
             </div>
 
             <AnalysisSummary
               results={analysisResults}
               colorId={selectedColorId}
+              sampleName={sampleName}
+              photoUrl={clayPhotoUrl}
+              onDownloadPdf={handleDownloadPdf}
+              isGeneratingPdf={isGeneratingPdf}
               onOpenImpuritiesModal={() => setActiveModal('impurities')}
               onOpenColorModal={() => setActiveModal('color')}
               onOpenGelModal={() => setActiveModal('gel')}
@@ -252,7 +322,7 @@ export default function App() {
             <span className="text-stone-400">100% автономный расчет без ИИ</span>
           </div>
           <div className="text-stone-400 text-[11px]">
-            Источники: табл_1.pdf, табл_2.pdf, иом.doc, Реология ОГ.pdf, ОГ помол.pdf, Смектит.pdf
+            Комплексная оценка качества и применимости бентонитового сырья
           </div>
         </div>
       </footer>

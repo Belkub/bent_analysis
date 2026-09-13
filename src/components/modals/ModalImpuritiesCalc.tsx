@@ -49,7 +49,7 @@ export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
                 Подробный расчет примесей и смектита
               </h3>
               <p className="text-xs text-stone-500">
-                Минералогический алгоритм разделения балласта по данным РФА (табл_2.pdf)
+                Минералогический алгоритм разделения балласта по данным РФА
               </p>
             </div>
           </div>
@@ -232,7 +232,7 @@ export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
-                      <strong>2. Пересчет по КОЕ (файл смектит.pdf)</strong>
+                      <strong>2. Пересчет по КОЕ</strong>
                       {smectiteSource === 'cec_matrix' && (
                         <span className="text-[10px] bg-blue-700 text-white px-1.5 py-0.2 rounded-sm font-bold">
                           АКТИВЕН: {effectiveSmectite}% (КОЕ = {cec} мг-экв, эталон {cecStandardUsed} мг-экв)
@@ -252,7 +252,7 @@ export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
-                      <strong>3. Минеральный расчет по РФА (файл таблица_2.pdf)</strong>
+                      <strong>3. Минеральный расчет по РФА</strong>
                       {smectiteSource === 'xrf_calc' && (
                         <span className="text-[10px] bg-amber-700 text-white px-1.5 py-0.2 rounded-sm font-bold">
                           АКТИВЕН: {effectiveSmectite}%

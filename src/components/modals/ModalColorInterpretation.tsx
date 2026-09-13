@@ -35,7 +35,7 @@ export const ModalColorInterpretation: React.FC<ModalColorInterpretationProps> =
                 Цветовая диагностика примесей в бентонитовых глинах
               </h3>
               <p className="text-xs text-stone-500">
-                Минералогическая таблица-определитель и фазовое состояние железа (табл_1.pdf)
+                Минералогическая классификация и фазовое состояние железа
               </p>
             </div>
           </div>

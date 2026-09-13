@@ -43,7 +43,7 @@ export const ModalIomDetails: React.FC<ModalIomDetailsProps> = ({
                 Индекс Органомодифицируемости (ИОМ)
               </h3>
               <p className="text-xs text-stone-500">
-                Физико-химический алгоритм комплексной оценки способности бентонита к интеркаляции ЧАС (иом.doc)
+                Физико-химический алгоритм комплексной оценки способности бентонита к интеркаляции ЧАС
               </p>
             </div>
           </div>
@@ -139,7 +139,7 @@ export const ModalIomDetails: React.FC<ModalIomDetailsProps> = ({
           <div className="space-y-2">
             <h4 className="font-bold text-stone-900 text-sm flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-amber-700" />
-              Таблица эталонных лабораторных образцов из документа иом.doc
+              Таблица эталонных лабораторных образцов
             </h4>
 
             <div className="overflow-x-auto border border-stone-200 rounded-xl">

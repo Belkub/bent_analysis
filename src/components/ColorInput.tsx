@@ -97,7 +97,7 @@ export const ColorInput: React.FC<ColorInputProps> = ({
             Цвет природного бентонита
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
-            Классификация по табл_1.pdf (ручной выбор или распознавание по фото)
+            Классификация цвета (ручной выбор или распознавание по фото)
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export const ColorInput: React.FC<ColorInputProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
           <label htmlFor="color-select-dropdown" className="block text-xs font-semibold text-stone-700 mb-1.5">
-            Категория цвета (табл. 1):
+            Категория цвета:
           </label>
           <select
             id="color-select-dropdown"

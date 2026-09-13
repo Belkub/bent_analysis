@@ -13,7 +13,9 @@ import {
   ChevronRight,
   ExternalLink,
   Target,
-  ArrowUpRight
+  ArrowUpRight,
+  FileDown,
+  Loader2
 } from 'lucide-react';
 import { AnalysisResults, BentoniteColorId } from '../types';
 import { BENTONITE_COLORS } from '../data/mineralData';
@@ -21,6 +23,10 @@ import { BENTONITE_COLORS } from '../data/mineralData';
 interface AnalysisSummaryProps {
   results: AnalysisResults;
   colorId: BentoniteColorId;
+  sampleName?: string;
+  photoUrl?: string;
+  onDownloadPdf?: () => void;
+  isGeneratingPdf?: boolean;
   onOpenImpuritiesModal: () => void;
   onOpenColorModal: () => void;
   onOpenGelModal: () => void;
@@ -31,6 +37,10 @@ interface AnalysisSummaryProps {
 export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
   results,
   colorId,
+  sampleName,
+  photoUrl,
+  onDownloadPdf,
+  isGeneratingPdf,
   onOpenImpuritiesModal,
   onOpenColorModal,
   onOpenGelModal,
@@ -174,14 +184,14 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               >
                 {results.smectiteSource === 'input' && '✓ Введено напрямую (Приоритет 1)'}
                 {results.smectiteSource === 'cec_matrix' &&
-                  `⚙️ По КОЕ (смектит.pdf: ${
+                  `⚙️ По КОЕ (${
                     results.cecStandardUsed === 120
                       ? 'Высокозарядный, 120 мг-экв'
                       : results.cecStandardUsed === 110
                       ? 'Среднезарядный, 110 мг-экв'
                       : 'Низкозарядный, 100 мг-экв'
                   }) (Приоритет 2)`}
-                {results.smectiteSource === 'xrf_calc' && '🔬 По РФА (табл_2.pdf: 100% - балласт) (Приоритет 3)'}
+                {results.smectiteSource === 'xrf_calc' && '🔬 По РФА (100% - балласт) (Приоритет 3)'}
               </span>
             </div>
 
@@ -457,12 +467,33 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-400" />
-              Подробные экспертные отчеты по нормативным документам
+              Подробные экспертные расчеты и расшифровки
             </h4>
             <p className="text-xs text-stone-400 mt-0.5">
               Нажмите на кнопку для просмотра математического обоснования и детальных технологических требований
             </p>
           </div>
+          {onDownloadPdf && (
+            <button
+              type="button"
+              id="analysis-download-pdf-btn"
+              onClick={onDownloadPdf}
+              disabled={isGeneratingPdf}
+              className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
+            >
+              {isGeneratingPdf ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-200" />
+                  <span>Формирование PDF...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-3.5 h-3.5 text-amber-200" />
+                  <span>Скачать PDF отчет</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
@@ -483,7 +514,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               </strong>
             </div>
             <span className="text-[10px] text-stone-400 mt-2 block">
-              Пошаговый расчет балласта (табл_2.pdf)
+              Пошаговый расчет балласта
             </span>
           </button>
 
@@ -504,7 +535,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               </strong>
             </div>
             <span className="text-[10px] text-stone-400 mt-2 block">
-              Фазы Fe и хромофоры (табл_1.pdf)
+              Фазы Fe и хромофоры
             </span>
           </button>
 
@@ -525,7 +556,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               </strong>
             </div>
             <span className="text-[10px] text-stone-400 mt-2 block">
-              Среды, FANN-35, Брукфильд (Реология ОГ)
+              Среды, FANN-35, Брукфильд
             </span>
           </button>
 
@@ -546,7 +577,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               </strong>
             </div>
             <span className="text-[10px] text-stone-400 mt-2 block">
-              5 методов помола, D50/D99 (ОГ помол.pdf)
+              5 методов помола, D50/D99
             </span>
           </button>
 
@@ -567,7 +598,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               </strong>
             </div>
             <span className="text-[10px] text-stone-400 mt-2 block">
-              Множители Na/Ca, Si/Fe, КОЕ (иом.doc)
+              Множители Na/Ca, Si/Fe, КОЕ
             </span>
           </button>
         </div>

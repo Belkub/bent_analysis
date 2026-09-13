@@ -169,10 +169,10 @@ export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
             </div>
           </div>
 
-          {/* Standard selector from смектит.pdf */}
+          {/* Standard selector */}
           <div className="mt-2.5 pt-2 border-t border-stone-200/80">
             <div className="flex items-center justify-between text-[10px] text-stone-600 mb-1.5 font-medium">
-              <span>Тип смектита для КОЕ (смектит.pdf):</span>
+              <span>Тип смектита для КОЕ:</span>
               <span className="font-semibold text-stone-900 bg-stone-100 px-1.5 py-0.5 rounded text-[10px]">
                 {cecStandardUsed === 120
                   ? 'Высокозарядный (120)'
@@ -290,11 +290,11 @@ export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
               </span>
             ) : smectiteSource === 'cec_matrix' ? (
               <span className="text-blue-700 font-medium block">
-                ⚙️ Пересчитано по КОЕ ({cec} мг-экв → <strong className="font-bold">{effectiveSmectite}%</strong> по эталону {cecStandardUsed === 120 ? 'Высокозарядного (120 мг-экв)' : cecStandardUsed === 110 ? 'Среднезарядного (110 мг-экв)' : 'Низкозарядного (100 мг-экв)'}, файл смектит.pdf). Используется для всех выводов.
+                ⚙️ Пересчитано по КОЕ ({cec} мг-экв → <strong className="font-bold">{effectiveSmectite}%</strong> по эталону {cecStandardUsed === 120 ? 'Высокозарядного (120 мг-экв)' : cecStandardUsed === 110 ? 'Среднезарядного (110 мг-экв)' : 'Низкозарядного (100 мг-экв)'}). Используется для всех выводов.
               </span>
             ) : (
               <span className="text-amber-800 font-medium block">
-                🔬 Расчет по алгоритму табл_2.pdf (<strong className="font-bold">{effectiveSmectite ?? 0}%</strong>, 100% - Балласт). Используется для всех выводов.
+                🔬 Расчет по балансу РФА (<strong className="font-bold">{effectiveSmectite ?? 0}%</strong>, 100% - Балласт). Используется для всех выводов.
               </span>
             )}
           </div>

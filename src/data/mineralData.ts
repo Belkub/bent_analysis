@@ -441,9 +441,9 @@ export const BENCHMARK_PRESETS: SamplePreset[] = [
   },
   {
     id: 'red_bentonite_hard',
-    name: 'Красный бентонит (Пример табл. 2)',
-    description: 'Тяжелый балласт = 30.16% (кварц + гематит). Абсолютно непригоден для ОГ методом пасты.',
-    sourceDoc: 'табл_2.pdf (Сложный случай)',
+    name: 'Красный бентонит (Высокий балласт)',
+    description: 'Тяжелый балласт = 30.16% (кварц + гематит). Непригоден для ОГ методом пасты.',
+    sourceDoc: 'Пример минерального балласта',
     data: {
       colorId: 'red_terracotta',
       oxides: {

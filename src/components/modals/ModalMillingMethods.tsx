@@ -35,7 +35,7 @@ export const ModalMillingMethods: React.FC<ModalMillingMethodsProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-stone-900">
-                Методы помола, диспергирования и гранулометрия органоглин (ОГ помол.pdf)
+                Методы помола, диспергирования и гранулометрия органоглин
               </h3>
               <p className="text-xs text-stone-500">
                 Требования к тонкости D50/D99, ситовому рассеву и характеристика 5 промышленных методов помола
