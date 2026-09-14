@@ -488,17 +488,36 @@ export function calculateAnalysis(input: BentoniteInputData): AnalysisResults {
       }
     }
 
-    const isSuitable = colorPass && reasonsFail.length === 0;
+    const failCount = reasonsFail.length;
+    const isSuitable = colorPass && failCount === 0;
+    const isLimited = !isSuitable && failCount >= 1 && failCount <= 2;
+    const suitabilityStatus: 'suitable' | 'limited' | 'unsuitable' = isSuitable
+      ? 'suitable'
+      : isLimited
+      ? 'limited'
+      : 'unsuitable';
 
     return {
       ...spec,
       isSuitable,
+      isLimited,
+      suitabilityStatus,
+      failCount,
       reasonsFail,
       reasonsPass,
     };
   });
 
   const suitableIndustries = evaluatedIndustries.filter((ind) => ind.isSuitable);
+  const limitedIndustries = evaluatedIndustries.filter((ind) => ind.isLimited);
+  const applicableIndustries = evaluatedIndustries.filter((ind) => ind.isSuitable || ind.isLimited);
+
+  let smectiteLabel = 'Смектит по РФА';
+  if (smectiteSource === 'input') {
+    smectiteLabel = 'Смектит факт';
+  } else if (smectiteSource === 'cec_matrix') {
+    smectiteLabel = 'Смектит расчет из КОЕ';
+  }
 
   return {
     bentoniteType,
@@ -509,9 +528,12 @@ export function calculateAnalysis(input: BentoniteInputData): AnalysisResults {
     iom,
     apiModel: apiModelResult,
     suitableIndustries,
+    limitedIndustries,
+    applicableIndustries,
     allIndustries: evaluatedIndustries,
     effectiveSmectite,
     smectiteSource,
+    smectiteLabel,
     cecStandardUsed,
   };
 }

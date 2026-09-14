@@ -9,12 +9,13 @@ import {
   ChevronDown,
   ArrowDown,
   FileDown,
+  FileText,
   Loader2
 } from 'lucide-react';
 import { BentoniteColorId, OxideComposition, ApiTestData, BenchmarkPreset } from './types';
 import { BENCHMARK_PRESETS, BENTONITE_COLORS } from './data/mineralData';
 import { analyzeBentonite } from './utils/bentoniteAnalyzer';
-import { generateBentonitePdfReport } from './utils/pdfReportGenerator';
+import { generateBentonitePdfReport, generateBentoniteOnePagePdfReport } from './utils/pdfReportGenerator';
 import { Header } from './components/Header';
 import { SampleInfoInput } from './components/SampleInfoInput';
 import { ColorInput } from './components/ColorInput';
@@ -31,6 +32,7 @@ export default function App() {
   // 0. Sample Identifier
   const [sampleName, setSampleName] = useState<string>('Бентонит МТ-06');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+  const [isGeneratingOnePagePdf, setIsGeneratingOnePagePdf] = useState<boolean>(false);
 
   // 1. Color State
   const [selectedColorId, setSelectedColorId] = useState<BentoniteColorId>('yellow_brown');
@@ -146,9 +148,37 @@ export default function App() {
     }, 50);
   };
 
-  // Generate and download full official laboratory PDF report
+  // Generate and download executive 1-page summary PDF report
+  const handleDownloadOnePagePdf = async () => {
+    if (isGeneratingOnePagePdf || isGeneratingPdf) return;
+    setIsGeneratingOnePagePdf(true);
+    try {
+      await generateBentoniteOnePagePdfReport({
+        sampleName,
+        photoUrl: clayPhotoUrl,
+        colorId: selectedColorId,
+        oxides,
+        swellingIndex,
+        cec,
+        cecStandard,
+        smectite,
+        sand,
+        activation,
+        sodaPercent,
+        apiTest,
+        analysisResults,
+      });
+    } catch (err) {
+      console.error('Failed to generate 1-page PDF report:', err);
+      alert('Произошла ошибка при экспорте краткого PDF файла.');
+    } finally {
+      setIsGeneratingOnePagePdf(false);
+    }
+  };
+
+  // Generate and download full official laboratory PDF report (3 pages)
   const handleDownloadPdf = async () => {
-    if (isGeneratingPdf) return;
+    if (isGeneratingPdf || isGeneratingOnePagePdf) return;
     setIsGeneratingPdf(true);
     try {
       await generateBentonitePdfReport({
@@ -273,27 +303,50 @@ export default function App() {
                 </p>
               </div>
 
-              {/* PDF Download Button in Results Header */}
-              <button
-                type="button"
-                id="download-pdf-report-btn"
-                onClick={handleDownloadPdf}
-                disabled={isGeneratingPdf}
-                className="px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-98 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
-                title="Сформировать и скачать полный 2-страничный PDF-паспорт образца"
-              >
-                {isGeneratingPdf ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-amber-200" />
-                    <span>Формирование PDF...</span>
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="w-4 h-4 text-amber-200" />
-                    <span>Скачать PDF отчет</span>
-                  </>
-                )}
-              </button>
+              {/* PDF Download Buttons in Results Header */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  id="download-1page-pdf-report-btn"
+                  onClick={handleDownloadOnePagePdf}
+                  disabled={isGeneratingOnePagePdf || isGeneratingPdf}
+                  className="px-3.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 active:scale-98 text-stone-800 border border-stone-300 font-bold text-xs shadow-2xs hover:shadow-xs transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
+                  title="Сформировать и скачать краткий экспресс-паспорт на 1 страницу А4"
+                >
+                  {isGeneratingOnePagePdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-stone-600" />
+                      <span>Формирование 1 стр...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4 text-amber-600" />
+                      <span>Краткий отчет (1 стр)</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  id="download-pdf-report-btn"
+                  onClick={handleDownloadPdf}
+                  disabled={isGeneratingPdf || isGeneratingOnePagePdf}
+                  className="px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-98 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
+                  title="Сформировать и скачать полный 3-страничный лабораторный PDF-паспорт образца"
+                >
+                  {isGeneratingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-amber-200" />
+                      <span>Формирование PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="w-4 h-4 text-amber-200" />
+                      <span>Полный отчет (3 стр)</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             <AnalysisSummary
@@ -303,6 +356,8 @@ export default function App() {
               photoUrl={clayPhotoUrl}
               onDownloadPdf={handleDownloadPdf}
               isGeneratingPdf={isGeneratingPdf}
+              onDownloadOnePagePdf={handleDownloadOnePagePdf}
+              isGeneratingOnePagePdf={isGeneratingOnePagePdf}
               onOpenImpuritiesModal={() => setActiveModal('impurities')}
               onOpenColorModal={() => setActiveModal('color')}
               onOpenGelModal={() => setActiveModal('gel')}

@@ -212,15 +212,15 @@ export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
-                      <strong>1. Ручной ввод смектита (Высший приоритет)</strong>
+                      <strong>1. Смектит факт (ручной ввод, высший приоритет)</strong>
                       {smectiteSource === 'input' && (
                         <span className="text-[10px] bg-emerald-700 text-white px-1.5 py-0.2 rounded-sm font-bold">
-                          АКТИВЕН: {inputSmectite}%
+                          Смектит факт: {inputSmectite}%
                         </span>
                       )}
                     </div>
                     <span>
-                      Если в разделе «Физико-химические параметры» заполнено поле «Содержание смектита», именно эта цифра используется для всех выходных заключений.
+                      Если в разделе «Физико-химические параметры» заполнено поле «Содержание смектита», в результатах фиксируется статус <strong>«Смектит факт»</strong> и эта цифра используется для всех выходных заключений.
                     </span>
                   </div>
 
@@ -232,15 +232,15 @@ export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
-                      <strong>2. Пересчет по КОЕ</strong>
+                      <strong>2. Смектит расчет из КОЕ (пересчет по обменной емкости)</strong>
                       {smectiteSource === 'cec_matrix' && (
                         <span className="text-[10px] bg-blue-700 text-white px-1.5 py-0.2 rounded-sm font-bold">
-                          АКТИВЕН: {effectiveSmectite}% (КОЕ = {cec} мг-экв, эталон {cecStandardUsed} мг-экв)
+                          Смектит расчет из КОЕ: {effectiveSmectite}% (КОЕ = {cec} мг-экв, эталон {cecStandardUsed} мг-экв)
                         </span>
                       )}
                     </div>
                     <span>
-                      Если поле «Содержание смектита» не заполнено, но заполнено «КОЕ бентонита», пересчет выполняется по формуле: <code>C_смектит = (КОЕ / {cecStandardUsed} мг-экв) × 100%</code>. По умолчанию строго используется таблица для <strong>Высокозарядного смектита (эталон 120 мг-экв)</strong>, с возможностью переключения в форме на среднезарядный (110) или низкозарядный (100).
+                      Если поле «Содержание смектита» не заполнено, но заполнено «КОЕ бентонита», в результатах выводится статус <strong>«Смектит расчет из КОЕ»</strong> по формуле: <code>C_смектит = (КОЕ / {cecStandardUsed} мг-экв) × 100%</code>. По умолчанию строго используется таблица для <strong>Высокозарядного смектита (эталон 120 мг-экв)</strong>, с возможностью переключения в форме на среднезарядный (110) или низкозарядный (100).
                     </span>
                   </div>
 
@@ -252,15 +252,15 @@ export const ModalImpuritiesCalc: React.FC<ModalImpuritiesCalcProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
-                      <strong>3. Минеральный расчет по РФА</strong>
+                      <strong>3. Смектит по РФА (минеральный баланс)</strong>
                       {smectiteSource === 'xrf_calc' && (
                         <span className="text-[10px] bg-amber-700 text-white px-1.5 py-0.2 rounded-sm font-bold">
-                          АКТИВЕН: {effectiveSmectite}%
+                          Смектит по РФА: {effectiveSmectite}%
                         </span>
                       )}
                     </div>
                     <span>
-                      Если оба поля («Содержание смектита» и «КОЕ бентонита») не заполнены, концентрация смектита вычисляется как разница: <code>100% - Балласт ({impurities.totalBallast}%) = {impurities.estimatedSmectite}%</code>.
+                      Если в исходных данных нет информации ни о КОЕ, ни о фактическом смектите, концентрация рассчитывается на основе данных РФА и в результатах выводится <strong>«Смектит по РФА»</strong>: <code>100% - Балласт ({impurities.totalBallast}%) = {impurities.estimatedSmectite}%</code>.
                     </span>
                   </div>
                 </div>

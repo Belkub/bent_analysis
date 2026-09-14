@@ -93,7 +93,7 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
   const isPasteAllowed = totalBallast <= 18 && freeSand <= 3 && (iom.value >= 16 || !iom.isCalculable);
 
   // Smectite source description string matching UI
-  let smectiteSourceText = '✓ Введено напрямую (Приоритет 1)';
+  let smectiteSourceText = '✓ Смектит факт (ручной ввод)';
   if (analysisResults.smectiteSource === 'cec_matrix') {
     const stdLabel =
       analysisResults.cecStandardUsed === 120
@@ -101,9 +101,9 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
         : analysisResults.cecStandardUsed === 110
         ? 'Среднезарядный, 110 мг-экв'
         : 'Низкозарядный, 100 мг-экв';
-    smectiteSourceText = `По КОЕ (${stdLabel}) (Приоритет 2)`;
+    smectiteSourceText = `Смектит расчет из КОЕ (${stdLabel})`;
   } else if (analysisResults.smectiteSource === 'xrf_calc') {
-    smectiteSourceText = 'По балансу РФА (100% − балласт) (Приоритет 3)';
+    smectiteSourceText = 'Смектит по РФА (100% − балласт)';
   }
 
   // Container element offscreen
@@ -190,7 +190,7 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
           <table style="width: 100%; font-size: 9.5px; border-collapse: collapse; text-align: left;">
             <tbody>
               <tr style="border-bottom: 1px solid #f5f5f4;">
-                <td style="padding: 2.5px 0; color: #78716c;">Содержание смектита:</td>
+                <td style="padding: 2.5px 0; color: #78716c;">${analysisResults.smectiteLabel || 'Смектит'}:</td>
                 <td style="padding: 2.5px 0; font-weight: bold; color: #047857; text-align: right;">
                   ${analysisResults.effectiveSmectite}%
                 </td>
@@ -344,7 +344,7 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
                 Балласт (РФА): <strong style="color: #1c1917;">${impurities.isSufficientData ? `${impurities.totalBallast}%` : '—'}</strong>
               </span>
               <span style="font-size: 9.5px; color: #78716c;">
-                Смектит (расчетный): <strong style="color: #047857; font-size: 11px;">${analysisResults.effectiveSmectite}%</strong>
+                ${analysisResults.smectiteLabel}: <strong style="color: #047857; font-size: 11px;">${analysisResults.effectiveSmectite}%</strong>
               </span>
             </div>
           </div>
@@ -591,12 +591,12 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
             Оценка пригодности по классам применения органоглин (ОГ): ${displaySampleName}
           </h2>
           <div style="font-size: 9.5px; color: #57534e; margin-top: 2px;">
-            Статус: Пригодно к использованию в <strong style="color: #047857;">${analysisResults.suitableIndustries.length}</strong> из ${analysisResults.allIndustries.length} отраслей производства ОГ
+            Статус: 100% норма: <strong style="color: #047857;">${analysisResults.suitableIndustries.length}</strong> | Ограниченно (1-2 п.): <strong style="color: #b45309;">${analysisResults.limitedIndustries.length}</strong> из ${analysisResults.allIndustries.length} отраслей производства ОГ
           </div>
         </div>
         <div style="text-align: right;">
           <div style="display: inline-block; font-size: 9px; font-weight: bold; background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 2px 6px; border-radius: 4px;">
-            ${analysisResults.suitableIndustries.length} одобрено
+            ${analysisResults.suitableIndustries.length} полное соответствие • ${analysisResults.limitedIndustries.length} огранич.
           </div>
         </div>
       </div>
@@ -606,26 +606,41 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
         ${analysisResults.allIndustries
           .map((ind) => {
             const isOk = ind.isSuitable;
+            const isLimited = ind.isLimited;
+            const borderCol = isOk ? '#a7f3d0' : isLimited ? '#fcd34d' : '#e7e5e4';
+            const bgCol = isOk ? '#f0fdf4' : isLimited ? '#fefce8' : '#fafaf9';
+            const badgeBg = isOk ? '#dcfce7' : isLimited ? '#fef3c7' : '#fee2e2';
+            const badgeText = isOk ? '#15803d' : isLimited ? '#92400e' : '#b91c1c';
+            const badgeLabel = isOk ? '✓ 100% Приемлемо' : isLimited ? `⚠️ Ограниченно (${ind.failCount} п.)` : `✗ Не проходит (${ind.failCount} п.)`;
+
             return `
-              <div style="border: 1px solid ${isOk ? '#a7f3d0' : '#e7e5e4'}; background-color: ${
-              isOk ? '#f0fdf4' : '#fafaf9'
-            }; border-radius: 6px; padding: 6px 8px;">
+              <div style="border: 1px solid ${borderCol}; background-color: ${bgCol}; border-radius: 6px; padding: 6px 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
                   <div style="display: flex; align-items: center; gap: 6px;">
                     <span style="font-family: monospace; font-size: 9.5px; font-weight: 800; background-color: ${
-                      isOk ? '#dcfce7' : '#e7e5e4'
+                      isOk ? '#dcfce7' : isLimited ? '#fef3c7' : '#e7e5e4'
                     }; color: #1c1917; padding: 1px 5px; border-radius: 3px;">
                       ${ind.code}
                     </span>
                     <strong style="font-size: 10px; color: #1c1917;">${ind.name}</strong>
                     <span style="font-size: 8.5px; color: #78716c;">(${ind.category})</span>
                   </div>
-                  <span style="font-size: 8.5px; font-weight: bold; padding: 1px 6px; border-radius: 3px; background-color: ${
-                    isOk ? '#dcfce7' : '#fee2e2'
-                  }; color: ${isOk ? '#15803d' : '#b91c1c'};">
-                    ${isOk ? '✓ Приемлемо' : '✗ Не проходит'}
+                  <span style="font-size: 8.5px; font-weight: bold; padding: 1px 6px; border-radius: 3px; background-color: ${badgeBg}; color: ${badgeText}; ${
+                    isLimited ? 'border: 1px solid #fde68a;' : ''
+                  }">
+                    ${badgeLabel}
                   </span>
                 </div>
+
+                ${
+                  isLimited
+                    ? `<div style="font-size: 8px; color: #92400e; background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 3px; padding: 2px 5px; margin-bottom: 3px;">
+                         ⚠️ <strong>Ограниченная применимость:</strong> не соответствует только ${ind.failCount} ${
+                        ind.failCount === 1 ? 'пункту' : 'пунктам'
+                      } нормативов. Допускается при корректировке рецептуры ОМ или согласовании ТУ.
+                       </div>`
+                    : ''
+                }
 
                 <!-- Criteria Validation lines -->
                 <div style="font-size: 8.5px; line-height: 1.3; margin-bottom: 3px;">
@@ -638,8 +653,8 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
                   }
                   ${
                     ind.reasonsFail.length > 0
-                      ? `<span style="color: #b91c1c; font-weight: 600;">
-                           ✗ ${ind.reasonsFail.join('; ')}
+                      ? `<span style="color: ${isLimited ? '#b45309' : '#b91c1c'}; font-weight: 600;">
+                           ${isLimited ? '⚠️' : '✗'} ${ind.reasonsFail.join('; ')}
                          </span>`
                       : ''
                   }
@@ -647,7 +662,7 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
 
                 <!-- Parameters summary grid -->
                 <div style="display: grid; grid-template-columns: 1.8fr 1.6fr 1.8fr 1.3fr; gap: 6px; font-size: 8px; color: #44403c; border-top: 1px dashed ${
-                  isOk ? '#bbf7d0' : '#e7e5e4'
+                  isOk ? '#bbf7d0' : isLimited ? '#fde68a' : '#e7e5e4'
                 }; padding-top: 3px;">
                   <div>
                     <span style="color: #78716c;">Среда:</span> <strong>${ind.targetMedium}</strong> (${ind.polarity})
@@ -752,3 +767,397 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
     document.body.removeChild(container);
   }
 }
+
+/**
+ * Generates and triggers download of an executive 1-page A4 summary passport
+ * containing all essential analytical data, mineralogy, 8-industry suitability (100% and limited),
+ * and processing recommendations on a single page.
+ */
+export async function generateBentoniteOnePagePdfReport(payload: PdfReportPayload): Promise<void> {
+  const {
+    sampleName,
+    colorId,
+    oxides,
+    swellingIndex,
+    cec,
+    cecStandard = 120,
+    sand,
+    activation,
+    sodaPercent,
+    apiTest,
+    analysisResults,
+  } = payload;
+
+  const now = new Date();
+  const dateFormatted = `${String(now.getDate()).padStart(2, '0')}.${String(
+    now.getMonth() + 1
+  ).padStart(2, '0')}.${now.getFullYear()}`;
+  const timeFormatted = `${String(now.getHours()).padStart(2, '0')}:${String(
+    now.getMinutes()
+  ).padStart(2, '0')}`;
+
+  const selectedColor =
+    BENTONITE_COLORS.find((c) => c.id === colorId) || BENTONITE_COLORS[0];
+  const displaySampleName = sampleName.trim() || 'Образец без названия';
+
+  const {
+    bentoniteTypeLabel,
+    bentoniteTypeDescription,
+    iom,
+    impurities,
+    apiModel,
+    colorInterpretation,
+  } = analysisResults;
+
+  // Smectite source description
+  let smectiteSourceText = '✓ Смектит факт';
+  if (analysisResults.smectiteSource === 'cec_matrix') {
+    smectiteSourceText = `КОЕ (${analysisResults.cecStandardUsed || cecStandard} мг-экв)`;
+  } else if (analysisResults.smectiteSource === 'xrf_calc') {
+    smectiteSourceText = 'РФА баланс';
+  }
+
+  // Processing paste/slurry decision
+  const totalBallast = impurities.isSufficientData ? impurities.totalBallast : 0;
+  const freeSand = sand ?? impurities.freeSiO2 ?? 0;
+  const isPasteAllowed = totalBallast <= 18 && freeSand <= 3 && (iom.value >= 16 || !iom.isCalculable);
+
+  // Oxide sums and ratios
+  const totalOxides = Object.values(oxides).reduce((acc, v) => acc + (v || 0), 0);
+  const na2o = oxides.Na2O ?? 0;
+  const cao = oxides.CaO ?? 0;
+  const sio2 = oxides.SiO2 ?? 0;
+  const fe2o3 = oxides.Fe2O3 ?? 0;
+  const naCaRatio = cao > 0 ? (na2o / cao).toFixed(2) : '—';
+  const siFeRatio = fe2o3 > 0 ? (sio2 / fe2o3).toFixed(2) : '—';
+
+  // Container element offscreen
+  const container = document.createElement('div');
+  container.id = 'pdf-1page-report-render-target';
+  container.style.position = 'fixed';
+  container.style.top = '-9999px';
+  container.style.left = '-9999px';
+  container.style.width = '794px'; // Exact A4 @ 96 DPI
+  container.style.backgroundColor = '#ffffff';
+
+  const page = document.createElement('div');
+  page.style.width = '794px';
+  page.style.height = '1123px';
+  page.style.maxHeight = '1123px';
+  page.style.boxSizing = 'border-box';
+  page.style.padding = '18px 22px';
+  page.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  page.style.backgroundColor = '#ffffff';
+  page.style.color = '#1c1917';
+  page.style.display = 'flex';
+  page.style.flexDirection = 'column';
+  page.style.justifyContent = 'space-between';
+  page.style.overflow = 'hidden';
+
+  page.innerHTML = `
+    <div>
+      <!-- 1. Compact Header -->
+      <div style="border-bottom: 2px solid #b45309; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; background-color: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 3px; border: 1px solid #fde68a; letter-spacing: 0.5px;">
+              ЭКСПРЕСС-ПАСПОРТ • 1 СТРАНИЦА
+            </span>
+            <span style="font-size: 8px; color: #78716c;">Лабораторный комплекс анализа бентонитов</span>
+          </div>
+          <h1 style="font-size: 15px; font-weight: 800; color: #1c1917; margin: 3px 0 0 0; line-height: 1.2;">
+            ${displaySampleName}
+          </h1>
+          <div style="font-size: 8.5px; color: #57534e; margin-top: 1px;">
+            Оценка пригодности базового бентонитового сырья для производства органоглин (ОГ)
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 8.5px; font-weight: 700; color: #44403c;">${dateFormatted} • ${timeFormatted}</div>
+          <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; padding: 2px 6px; border-radius: 4px; border: 1px solid #e7e5e4; background-color: #fafaf9;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${selectedColor.sampleHex}; border: 1px solid rgba(0,0,0,0.2);"></span>
+            <span style="font-size: 8px; font-weight: 600; color: #292524;">${selectedColor.shortName || selectedColor.name}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Bento 4 Top Metric Cards -->
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1.3fr 1.1fr; gap: 6px; margin-bottom: 8px;">
+        <!-- Card 1: Type -->
+        <div style="border: 1px solid #e7e5e4; border-radius: 5px; padding: 5px 7px; background-color: #fafaf9;">
+          <div style="font-size: 7.5px; font-weight: 700; color: #78716c; text-transform: uppercase;">1. Тип сырья (ОГ)</div>
+          <div style="font-size: 10.5px; font-weight: 800; color: #1c1917; margin-top: 1px; line-height: 1.2;">
+            ${bentoniteTypeLabel}
+          </div>
+          <div style="font-size: 7.5px; color: #57534e; margin-top: 2px;">
+            ${bentoniteTypeDescription.split('.')[0]}
+          </div>
+        </div>
+
+        <!-- Card 2: IOM -->
+        <div style="border: 1px solid #e7e5e4; border-radius: 5px; padding: 5px 7px; background-color: #fafaf9;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 7.5px; font-weight: 700; color: #78716c; text-transform: uppercase;">2. Индекс ОМ</span>
+            <span style="font-size: 7px; font-weight: 700; padding: 0.5px 4px; border-radius: 3px; background-color: ${
+              iom.rating === 'excellent'
+                ? '#dcfce7'
+                : iom.rating === 'good'
+                ? '#dbeafe'
+                : iom.rating === 'acceptable'
+                ? '#fef3c7'
+                : '#fee2e2'
+            }; color: ${
+              iom.rating === 'excellent'
+                ? '#15803d'
+                : iom.rating === 'good'
+                ? '#1e40af'
+                : iom.rating === 'acceptable'
+                ? '#92400e'
+                : '#b91c1c'
+            };">
+              ${iom.ratingLabel}
+            </span>
+          </div>
+          <div style="font-size: 13px; font-weight: 800; color: #1c1917; margin-top: 1px;">
+            ${iom.isCalculable ? iom.value.toFixed(1) : '—'}
+          </div>
+          <div style="font-size: 7px; color: #78716c; margin-top: 1px;">
+            M(Na/Ca): ${iom.multNaCa.toFixed(2)} • M(Si/Fe): ${iom.multSiFe.toFixed(2)} • M(КОЕ): ${iom.multCec.toFixed(2)}
+          </div>
+        </div>
+
+        <!-- Card 3: Impurities & Smectite -->
+        <div style="border: 1px solid #e7e5e4; border-radius: 5px; padding: 5px 7px; background-color: #fafaf9;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 7.5px; font-weight: 700; color: #78716c; text-transform: uppercase;">3. Примеси и смектит</span>
+            <span style="font-size: 7px; font-weight: 700; padding: 0.5px 4px; border-radius: 3px; background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;">
+              ${smectiteSourceText}
+            </span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 1px;">
+            <div>
+              <span style="font-size: 7px; color: #78716c;">${analysisResults.smectiteLabel}:</span>
+              <span style="font-size: 12px; font-weight: 800; color: #047857;">${analysisResults.effectiveSmectite}%</span>
+            </div>
+            <div>
+              <span style="font-size: 7px; color: #78716c;">Балласт:</span>
+              <span style="font-size: 11px; font-weight: 700; color: #1c1917;">${impurities.isSufficientData ? `${impurities.totalBallast}%` : '—'}</span>
+            </div>
+          </div>
+          <div style="font-size: 7px; color: #78716c; margin-top: 1px;">
+            Кварц: ${impurities.freeSiO2}% • Мел: ${impurities.calciteCaCO3}% • Шпаты: ${impurities.orthoclase}% • Fe-балласт: ${impurities.ironBallast}%
+          </div>
+        </div>
+
+        <!-- Card 4: Rheology -->
+        <div style="border: 1px solid #e7e5e4; border-radius: 5px; padding: 5px 7px; background-color: #fafaf9;">
+          <div style="font-size: 7.5px; font-weight: 700; color: #78716c; text-transform: uppercase;">4. Реология (6% суспензия)</div>
+          <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 1px;">
+            <div>
+              <span style="font-size: 7px; color: #78716c;">PV:</span>
+              <span style="font-size: 10.5px; font-weight: 800; color: #1c1917;">${apiModel?.pv !== undefined ? `${apiModel.pv} сП` : '—'}</span>
+            </div>
+            <div>
+              <span style="font-size: 7px; color: #78716c;">YP:</span>
+              <span style="font-size: 10.5px; font-weight: 800; color: #1c1917;">${apiModel?.yp !== undefined ? `${apiModel.yp} lb` : '—'}</span>
+            </div>
+            <div>
+              <span style="font-size: 7px; color: #78716c;">YP/PV:</span>
+              <span style="font-size: 10.5px; font-weight: 800; color: #1c1917;">${apiModel?.ratio !== undefined ? `${apiModel.ratio}` : '—'}</span>
+            </div>
+          </div>
+          <div style="font-size: 7px; color: #78716c; margin-top: 1px;">
+            ${apiModel ? apiModel.label : (apiTest.f600 !== undefined ? `ф600: ${apiTest.f600}, ф300: ${apiTest.f300}` : 'Естественная реология')}
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Two Columns: Left = Oxides & Physics, Right = Color & Manufacturing -->
+      <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 8px; margin-bottom: 8px;">
+        <!-- Left: Oxides Table & Physical Constants -->
+        <div style="border: 1px solid #e7e5e4; border-radius: 6px; padding: 6px 8px; background-color: #ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <strong style="font-size: 8px; text-transform: uppercase; color: #44403c; letter-spacing: 0.5px;">
+              Химический состав (РФА оксиды, масс. %)
+            </strong>
+            <span style="font-size: 7.5px; color: #78716c;">Сумма: <strong>${totalOxides.toFixed(2)}%</strong></span>
+          </div>
+          <!-- Dense oxide chips -->
+          <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; font-size: 7.5px; margin-bottom: 5px;">
+            ${ALL_OXIDE_KEYS.map((k) => `
+              <div style="background-color: #fafaf9; border: 1px solid #f0eeed; border-radius: 3px; padding: 1.5px 3px; text-align: center;">
+                <span style="color: #78716c; font-size: 6.5px; display: block;">${k}</span>
+                <strong style="color: #1c1917;">${oxides[k] !== undefined ? Number(oxides[k]).toFixed(2) : '0.00'}</strong>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Moduli Ratios & Physical properties -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding-top: 4px; border-top: 1px dashed #e7e5e4; font-size: 7.5px;">
+            <div>
+              <span style="color: #78716c; font-size: 6.5px; display: block;">Na₂O / CaO:</span>
+              <strong style="color: #1c1917;">${naCaRatio}</strong>
+            </div>
+            <div>
+              <span style="color: #78716c; font-size: 6.5px; display: block;">SiO₂ / Fe₂O₃:</span>
+              <strong style="color: #1c1917;">${siFeRatio}</strong>
+            </div>
+            <div>
+              <span style="color: #78716c; font-size: 6.5px; display: block;">КОЕ (мг-экв):</span>
+              <strong style="color: #1c1917;">${cec !== undefined ? `${cec}` : '—'}</strong>
+            </div>
+            <div>
+              <span style="color: #78716c; font-size: 6.5px; display: block;">Набухание:</span>
+              <strong style="color: #1c1917;">${swellingIndex !== undefined ? `${swellingIndex} мл` : '—'}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Color & Manufacturing Tech Rules -->
+        <div style="border: 1px solid #e7e5e4; border-radius: 6px; padding: 6px 8px; background-color: #ffffff; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+              <strong style="font-size: 8px; text-transform: uppercase; color: #44403c; letter-spacing: 0.5px;">
+                Цвет и хромофоры железа
+              </strong>
+              <span style="font-size: 7px; color: ${selectedColor.id === 'white_light_gray' ? '#15803d' : '#b45309'}; font-weight: 700;">
+                ${selectedColor.id === 'white_light_gray' ? '✓ Светлый базовый' : 'Окрашенный'}
+              </span>
+            </div>
+            <div style="font-size: 7.5px; color: #57534e; line-height: 1.25;">
+              Fe₂O₃ общ: <strong>${(oxides.Fe2O3 || 0).toFixed(2)}%</strong> • Структурное Fe: <strong>${impurities.ironStructural.toFixed(2)}%</strong> • Fe-балласт: <strong>${impurities.ironFree.toFixed(2)}%</strong>
+            </div>
+          </div>
+
+          <div style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #e7e5e4;">
+            <strong style="font-size: 8px; text-transform: uppercase; color: #44403c; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">
+              Техрегламент ОМ
+            </strong>
+            <div style="font-size: 7.5px; color: #44403c; line-height: 1.3;">
+              Синтез ОГ: <strong style="color: ${isPasteAllowed ? '#047857' : '#b45309'};">${isPasteAllowed ? 'Паста (влажность 25–35%)' : 'Суспензия (мокрая схема)'}</strong>
+              <br/>
+              Помол: <strong>95–98% < 74 мкм (200 mesh)</strong> • Песок >44 мкм: <strong>${freeSand}%</strong> ${freeSand > 3 ? '(требуется гидроциклон)' : '(норма)'}
+              ${activation ? `<br/>Активация содой: <strong>${sodaPercent ?? 2}% Na₂CO₃</strong>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Industry Applicability Matrix (All 8 Industries: 100% and Limited) -->
+      <div style="border: 1px solid #e7e5e4; border-radius: 6px; padding: 7px 9px; background-color: #ffffff; margin-bottom: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; border-bottom: 1px solid #f0eeed; padding-bottom: 3px;">
+          <div>
+            <span style="font-size: 8px; font-weight: 800; text-transform: uppercase; color: #b45309; letter-spacing: 0.5px;">
+              РЕЕСТР ПРИМЕНИМОСТИ ПО 8 ОТРАСЛЯМ ПРОИЗВОДСТВА ОРГАНОГЛИН (ОГ)
+            </span>
+            <span style="font-size: 7.5px; color: #78716c; margin-left: 6px;">
+              100% норма: <strong style="color: #047857;">${analysisResults.suitableIndustries.length}</strong> • Ограниченно (1-2 п.): <strong style="color: #b45309;">${analysisResults.limitedIndustries.length}</strong> • Не проходит: <strong style="color: #78716c;">${analysisResults.allIndustries.length - analysisResults.applicableIndustries.length}</strong>
+            </span>
+          </div>
+          <div style="font-size: 7.5px; font-weight: 700; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 1px 5px; border-radius: 3px;">
+            Применимо всего: ${analysisResults.applicableIndustries.length} из 8
+          </div>
+        </div>
+
+        <!-- 8 Industries Grid: 2 Columns of 4 Items -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+          ${analysisResults.allIndustries
+            .map((ind) => {
+              const isOk = ind.isSuitable;
+              const isLimited = ind.isLimited;
+              const borderCol = isOk ? '#a7f3d0' : isLimited ? '#fcd34d' : '#e7e5e4';
+              const bgCol = isOk ? '#f0fdf4' : isLimited ? '#fefce8' : '#fafaf9';
+              const badgeBg = isOk ? '#dcfce7' : isLimited ? '#fef3c7' : '#fee2e2';
+              const badgeText = isOk ? '#15803d' : isLimited ? '#92400e' : '#b91c1c';
+              const badgeLabel = isOk ? '✓ 100%' : isLimited ? `⚠️ Огранич. (${ind.failCount}п)` : `✗ Откл. (${ind.failCount}п)`;
+
+              return `
+                <div style="border: 1px solid ${borderCol}; background-color: ${bgCol}; border-radius: 4px; padding: 4px 6px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 4px; overflow: hidden;">
+                      <span style="font-family: monospace; font-size: 8px; font-weight: 800; background-color: ${
+                        isOk ? '#dcfce7' : isLimited ? '#fef3c7' : '#e7e5e4'
+                      }; color: #1c1917; padding: 0.5px 3.5px; border-radius: 2px; shrink-0;">
+                        ${ind.code}
+                      </span>
+                      <strong style="font-size: 8.5px; color: #1c1917; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${ind.name}">
+                        ${ind.name}
+                      </strong>
+                    </div>
+                    <span style="font-size: 7.5px; font-weight: 700; padding: 0.5px 4px; border-radius: 2px; background-color: ${badgeBg}; color: ${badgeText}; shrink-0; ${
+                      isLimited ? 'border: 1px solid #fde68a;' : ''
+                    }">
+                      ${badgeLabel}
+                    </span>
+                  </div>
+
+                  <div style="font-size: 7px; color: #57534e; margin-top: 1.5px; line-height: 1.2;">
+                    ${
+                      isLimited
+                        ? `<span style="color: #92400e; font-weight: 600;">⚠️ Не выполнен${ind.failCount === 1 ? 'о' : 'ы'} ${ind.failCount} усл.: ${ind.reasonsFail.join('; ')}</span>`
+                        : isOk
+                        ? `<span style="color: #15803d;">✓ Полное соответствие: ${ind.reasonsPass.slice(0, 2).join('; ')}</span>`
+                        : `<span style="color: #b91c1c;">✗ Причины: ${ind.reasonsFail.slice(0, 2).join('; ')}</span>`
+                    }
+                  </div>
+
+                  <div style="display: flex; justify-content: space-between; font-size: 6.5px; color: #78716c; margin-top: 2px; border-top: 1px dashed ${
+                    isOk ? '#bbf7d0' : isLimited ? '#fde68a' : '#f0eeed'
+                  }; padding-top: 1.5px;">
+                    <span>Среда: <strong>${ind.targetMedium}</strong> (${ind.polarity})</span>
+                    <span>Цвет геля: <strong>${ind.gelAppearance.split(' ')[0]}</strong></span>
+                  </div>
+                </div>
+              `;
+            })
+            .join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Bottom Metrological & Signature Footer -->
+    <div style="border-top: 1px solid #e7e5e4; padding-top: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 7px; color: #78716c;">
+      <div>
+        <strong>Метрология:</strong> Автоматический расчет по минералогическому балансу РФА, стехиометрии фаз Fe, КОЕ и индекса ИОМ.
+      </div>
+      <div>
+        Экспресс-паспорт базового бентонита • <strong>Страница 1 из 1</strong>
+      </div>
+    </div>
+  `;
+
+  container.appendChild(page);
+  document.body.appendChild(container);
+
+  try {
+    const canvas = await html2canvas(page, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+    });
+
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true,
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+
+    // Generate sanitized filename
+    const sanitizedName = (sampleName.trim() || 'Бентонит_Паспорт')
+      .replace(/[\/\\?%*:|"<>]/g, '_')
+      .replace(/\s+/g, '_');
+    const filename = `${sanitizedName}_Краткий_Паспорт_${now.getFullYear()}-${String(
+      now.getMonth() + 1
+    ).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.pdf`;
+
+    pdf.save(filename);
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+

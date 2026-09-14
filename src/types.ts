@@ -109,6 +109,9 @@ export interface IndustrySuitability {
   name: string;
   category: string;
   isSuitable: boolean;
+  isLimited?: boolean;
+  suitabilityStatus?: 'suitable' | 'limited' | 'unsuitable';
+  failCount?: number;
   reasonsFail: string[];
   reasonsPass: string[];
   allowedColors: string;
@@ -148,9 +151,12 @@ export interface AnalysisResults {
     recommendation?: string;
   };
   suitableIndustries: IndustrySuitability[];
+  limitedIndustries: IndustrySuitability[];
+  applicableIndustries: IndustrySuitability[];
   allIndustries: IndustrySuitability[];
   effectiveSmectite: number;
   smectiteSource: 'input' | 'xrf_calc' | 'cec_matrix';
+  smectiteLabel: string;
   cecStandardUsed?: number;
 }
 

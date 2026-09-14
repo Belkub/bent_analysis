@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
+  XCircle,
   Award,
   Layers,
   Palette,
@@ -15,6 +16,7 @@ import {
   Target,
   ArrowUpRight,
   FileDown,
+  FileText,
   Loader2
 } from 'lucide-react';
 import { AnalysisResults, BentoniteColorId } from '../types';
@@ -26,7 +28,9 @@ interface AnalysisSummaryProps {
   sampleName?: string;
   photoUrl?: string;
   onDownloadPdf?: () => void;
+  onDownloadOnePagePdf?: () => void;
   isGeneratingPdf?: boolean;
+  isGeneratingOnePagePdf?: boolean;
   onOpenImpuritiesModal: () => void;
   onOpenColorModal: () => void;
   onOpenGelModal: () => void;
@@ -40,16 +44,27 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
   sampleName,
   photoUrl,
   onDownloadPdf,
+  onDownloadOnePagePdf,
   isGeneratingPdf,
+  isGeneratingOnePagePdf,
   onOpenImpuritiesModal,
   onOpenColorModal,
   onOpenGelModal,
   onOpenMillingModal,
   onOpenIomModal,
 }) => {
-  const [industryTab, setIndustryTab] = useState<'suitable' | 'all'>('suitable');
+  const [industryTab, setIndustryTab] = useState<'applicable' | 'suitable' | 'limited' | 'all'>('applicable');
   const colorInfo = BENTONITE_COLORS.find((c) => c.id === colorId) || BENTONITE_COLORS[0];
   const { impurities, iom, apiModel } = results;
+
+  const currentIndustriesList =
+    industryTab === 'applicable'
+      ? results.applicableIndustries
+      : industryTab === 'suitable'
+      ? results.suitableIndustries
+      : industryTab === 'limited'
+      ? results.limitedIndustries
+      : results.allIndustries;
 
   return (
     <div id="analysis-results-section" className="space-y-6">
@@ -164,7 +179,9 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-xs text-stone-500 block">Смектит (расчетный):</span>
+                <span className="text-xs text-stone-500 block font-medium">
+                  {results.smectiteLabel}:
+                </span>
                 <span className="text-2xl font-bold font-mono text-emerald-700">
                   {results.effectiveSmectite}%
                 </span>
@@ -182,16 +199,16 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
                     : 'bg-amber-100 text-amber-800 border border-amber-200'
                 }`}
               >
-                {results.smectiteSource === 'input' && '✓ Введено напрямую (Приоритет 1)'}
+                {results.smectiteSource === 'input' && '✓ Смектит факт (ручной ввод)'}
                 {results.smectiteSource === 'cec_matrix' &&
-                  `⚙️ По КОЕ (${
+                  `⚙️ Смектит расчет из КОЕ (${
                     results.cecStandardUsed === 120
                       ? 'Высокозарядный, 120 мг-экв'
                       : results.cecStandardUsed === 110
                       ? 'Среднезарядный, 110 мг-экв'
                       : 'Низкозарядный, 100 мг-экв'
-                  }) (Приоритет 2)`}
-                {results.smectiteSource === 'xrf_calc' && '🔬 По РФА (100% - балласт) (Приоритет 3)'}
+                  })`}
+                {results.smectiteSource === 'xrf_calc' && '🔬 Смектит по РФА (100% − балласт)'}
               </span>
             </div>
 
@@ -323,34 +340,58 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
 
       {/* Suitable Industries Section */}
       <div id="industries-section" className="bg-white rounded-xl border border-stone-200 p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
           <div>
             <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
               Применимость базового бентонита по отраслям промышленности
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">
-              Анализ соответствия по цвету, смектиту, КОЕ, индексу набухания и чистоте сырья
+              Анализ соответствия по цвету, смектиту, КОЕ, индексу набухания и чистоте сырья (100% соответствие и ограниченная применимость 1–2 пункта)
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-lg">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-stone-100 rounded-lg">
             <button
               type="button"
-              id="filter-suitable-btn"
-              onClick={() => setIndustryTab('suitable')}
-              className={`text-xs px-3 py-1 rounded-md font-semibold transition-all ${
-                industryTab === 'suitable'
+              id="filter-applicable-btn"
+              onClick={() => setIndustryTab('applicable')}
+              className={`text-xs px-3 py-1.5 rounded-md font-semibold transition-all ${
+                industryTab === 'applicable'
                   ? 'bg-white text-stone-900 shadow-2xs'
                   : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              Подходящие ({results.suitableIndustries.length})
+              Применимые ({results.applicableIndustries.length})
+            </button>
+            <button
+              type="button"
+              id="filter-suitable-btn"
+              onClick={() => setIndustryTab('suitable')}
+              className={`text-xs px-2.5 py-1.5 rounded-md font-semibold transition-all ${
+                industryTab === 'suitable'
+                  ? 'bg-white text-emerald-800 shadow-2xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              100% норма ({results.suitableIndustries.length})
+            </button>
+            <button
+              type="button"
+              id="filter-limited-btn"
+              onClick={() => setIndustryTab('limited')}
+              className={`text-xs px-2.5 py-1.5 rounded-md font-semibold transition-all ${
+                industryTab === 'limited'
+                  ? 'bg-white text-amber-900 shadow-2xs'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              Ограниченно 1–2 п. ({results.limitedIndustries.length})
             </button>
             <button
               type="button"
               id="filter-all-btn"
               onClick={() => setIndustryTab('all')}
-              className={`text-xs px-3 py-1 rounded-md font-semibold transition-all ${
+              className={`text-xs px-2.5 py-1.5 rounded-md font-semibold transition-all ${
                 industryTab === 'all'
                   ? 'bg-white text-stone-900 shadow-2xs'
                   : 'text-stone-500 hover:text-stone-800'
@@ -363,15 +404,19 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
 
         {/* Industry Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {(industryTab === 'suitable' ? results.suitableIndustries : results.allIndustries).map((ind) => {
+          {currentIndustriesList.map((ind) => {
             const isOk = ind.isSuitable;
+            const isLimited = ind.isLimited;
+
             return (
               <div
                 key={ind.subIndustryId}
                 id={`industry-card-${ind.subIndustryId}`}
                 className={`rounded-xl border p-4 transition-all flex flex-col justify-between ${
                   isOk
-                    ? 'border-emerald-200 bg-emerald-50/30 hover:border-emerald-300'
+                    ? 'border-emerald-300 bg-emerald-50/40 hover:border-emerald-400'
+                    : isLimited
+                    ? 'border-amber-300 bg-amber-50/75 hover:border-amber-400'
                     : 'border-stone-200 bg-stone-50/50 opacity-75'
                 }`}
               >
@@ -388,20 +433,40 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
                         {ind.category}
                       </span>
                     </div>
+
                     <span
                       className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 ${
                         isOk
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : isLimited
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
                           : 'bg-stone-200 text-stone-700'
                       }`}
                     >
-                      {isOk ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                      {isOk ? 'Приемлемо' : 'Не проходит'}
+                      {isOk ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                      ) : isLimited ? (
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
+                      ) : (
+                        <XCircle className="w-3.5 h-3.5 text-stone-500" />
+                      )}
+                      {isOk
+                        ? '100% Приемлемо'
+                        : isLimited
+                        ? `Ограниченно (${ind.failCount} п.)`
+                        : `Не проходит (${ind.failCount} п.)`}
                     </span>
                   </div>
 
+                  {/* Highlight banner for Limited applicability */}
+                  {isLimited && (
+                    <div className="text-[11px] font-medium text-amber-950 bg-amber-100/90 px-2.5 py-1.5 rounded-lg border border-amber-300 mt-1 mb-2.5 leading-tight">
+                      ⚠️ <strong>Ограниченная применимость:</strong> не выполнен{ind.failCount === 1 ? 'о' : 'ы'} только {ind.failCount} {ind.failCount === 1 ? 'требование' : 'требования'}. Сырье пригодно при адаптации технологии органомодификации или согласовании ТУ.
+                    </div>
+                  )}
+
                   {/* Criteria validation lists */}
-                  <div className="space-y-1 my-2.5 text-xs">
+                  <div className="space-y-1 my-2 text-xs">
                     {ind.reasonsPass.map((p, idx) => (
                       <div key={idx} className="text-emerald-700 flex items-center gap-1.5 text-[11px]">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
@@ -409,8 +474,17 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
                       </div>
                     ))}
                     {ind.reasonsFail.map((f, idx) => (
-                      <div key={idx} className="text-red-700 flex items-center gap-1.5 text-[11px] font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                      <div
+                        key={idx}
+                        className={`flex items-center gap-1.5 text-[11px] font-medium ${
+                          isLimited ? 'text-amber-800' : 'text-red-700'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            isLimited ? 'bg-amber-500' : 'bg-red-500'
+                          }`}
+                        />
                         {f}
                       </div>
                     ))}
@@ -448,14 +522,14 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
           })}
         </div>
 
-        {results.suitableIndustries.length === 0 && industryTab === 'suitable' && (
+        {currentIndustriesList.length === 0 && (
           <div className="p-6 text-center text-stone-500 bg-stone-50 rounded-xl border border-stone-200">
             <AlertCircle className="w-8 h-8 mx-auto text-amber-600 mb-2" />
             <strong className="block text-stone-800 text-sm mb-1">
-              Нет полного соответствия нормативам ни для одной из 8 отраслей
+              В данной категории нет соответствующих отраслей
             </strong>
             <p className="text-xs max-w-md mx-auto">
-              Попробуйте проверить оксидный состав (РФА), снизить балласт путем мокрого обогащения или переключитесь на вкладку «Все отрасли», чтобы увидеть причины отклонения.
+              Переключитесь на вкладку «Все отрасли» ({results.allIndustries.length}), чтобы ознакомиться с критериями и причинами отклонений.
             </p>
           </div>
         )}
@@ -473,27 +547,52 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               Нажмите на кнопку для просмотра математического обоснования и детальных технологических требований
             </p>
           </div>
-          {onDownloadPdf && (
-            <button
-              type="button"
-              id="analysis-download-pdf-btn"
-              onClick={onDownloadPdf}
-              disabled={isGeneratingPdf}
-              className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
-            >
-              {isGeneratingPdf ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-200" />
-                  <span>Формирование PDF...</span>
-                </>
-              ) : (
-                <>
-                  <FileDown className="w-3.5 h-3.5 text-amber-200" />
-                  <span>Скачать PDF отчет</span>
-                </>
-              )}
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {onDownloadOnePagePdf && (
+              <button
+                type="button"
+                id="analysis-download-1page-pdf-btn"
+                onClick={onDownloadOnePagePdf}
+                disabled={isGeneratingOnePagePdf || isGeneratingPdf}
+                className="px-3 py-2 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-300 hover:text-amber-200 border border-stone-700 font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
+                title="Сформировать краткий паспорт на 1 страницу А4"
+              >
+                {isGeneratingOnePagePdf ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
+                    <span>Формирование 1 стр...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Краткий отчет (1 стр)</span>
+                  </>
+                )}
+              </button>
+            )}
+            {onDownloadPdf && (
+              <button
+                type="button"
+                id="analysis-download-pdf-btn"
+                onClick={onDownloadPdf}
+                disabled={isGeneratingPdf || isGeneratingOnePagePdf}
+                className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
+                title="Сформировать полный 3-страничный PDF отчет"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-200" />
+                    <span>Формирование PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-3.5 h-3.5 text-amber-200" />
+                    <span>Полный отчет (3 стр)</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
