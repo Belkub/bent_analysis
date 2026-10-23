@@ -332,7 +332,7 @@ export default function App() {
                   onClick={handleDownloadPdf}
                   disabled={isGeneratingPdf || isGeneratingOnePagePdf}
                   className="px-4 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 active:scale-98 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
-                  title="Сформировать и скачать полный 3-страничный лабораторный PDF-паспорт образца"
+                  title="Сформировать и скачать полный 4-страничный лабораторный PDF-паспорт образца"
                 >
                   {isGeneratingPdf ? (
                     <>
@@ -342,7 +342,7 @@ export default function App() {
                   ) : (
                     <>
                       <FileDown className="w-4 h-4 text-amber-200" />
-                      <span>Полный отчет (3 стр)</span>
+                      <span>Полный отчет (4 стр)</span>
                     </>
                   )}
                 </button>

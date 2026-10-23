@@ -577,7 +577,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
                 onClick={onDownloadPdf}
                 disabled={isGeneratingPdf || isGeneratingOnePagePdf}
                 className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-2 shrink-0 disabled:opacity-50 cursor-pointer"
-                title="Сформировать полный 3-страничный PDF отчет"
+                title="Сформировать полный 4-страничный PDF отчет"
               >
                 {isGeneratingPdf ? (
                   <>
@@ -587,7 +587,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
                 ) : (
                   <>
                     <FileDown className="w-3.5 h-3.5 text-amber-200" />
-                    <span>Полный отчет (3 стр)</span>
+                    <span>Полный отчет (4 стр)</span>
                   </>
                 )}
               </button>
