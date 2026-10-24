@@ -27,6 +27,7 @@ import { ModalColorInterpretation } from './components/modals/ModalColorInterpre
 import { ModalGelCharacteristics } from './components/modals/ModalGelCharacteristics';
 import { ModalMillingMethods } from './components/modals/ModalMillingMethods';
 import { ModalIomDetails } from './components/modals/ModalIomDetails';
+import { ModalApiRole } from './components/modals/ModalApiRole';
 
 export default function App() {
   // 0. Sample Identifier
@@ -58,7 +59,7 @@ export default function App() {
 
   // 6. Modal Open State
   const [activeModal, setActiveModal] = useState<
-    'none' | 'impurities' | 'color' | 'gel' | 'milling' | 'iom'
+    'none' | 'impurities' | 'color' | 'gel' | 'milling' | 'iom' | 'apiRole'
   >('none');
 
   // Load a benchmark sample
@@ -363,6 +364,7 @@ export default function App() {
               onOpenGelModal={() => setActiveModal('gel')}
               onOpenMillingModal={() => setActiveModal('milling')}
               onOpenIomModal={() => setActiveModal('iom')}
+              onOpenApiRoleModal={() => setActiveModal('apiRole')}
             />
           </div>
         )}
@@ -382,7 +384,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* 5 Modals */}
+      {/* 6 Modals */}
       <ModalImpuritiesCalc
         isOpen={activeModal === 'impurities'}
         onClose={() => setActiveModal('none')}
@@ -419,6 +421,14 @@ export default function App() {
         isOpen={activeModal === 'iom'}
         onClose={() => setActiveModal('none')}
         iom={analysisResults.iom}
+      />
+
+      <ModalApiRole
+        isOpen={activeModal === 'apiRole'}
+        onClose={() => setActiveModal('none')}
+        apiModel={analysisResults.apiModel}
+        f600={apiTest.f600}
+        f300={apiTest.f300}
       />
     </div>
   );

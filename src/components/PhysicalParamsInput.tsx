@@ -478,15 +478,18 @@ export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
               </div>
             </div>
 
-            {/* Ratio indicator & OM suitability evaluation */}
+            {/* Ratio indicator & OM suitability evaluation & Sodium Substitution Degree x */}
             {calculatedRatio && (() => {
               const f600Val = apiTest.f600 ?? 0;
               const f300Val = apiTest.f300 ?? 0;
               const evalRes = evaluateApiRheology(f600Val, f300Val, apiTest.pv, apiTest.yp);
+              const xVal = evalRes.sodiumSubstitutionDegree ?? 0;
+              const xRating = evalRes.sodiumSubstitutionRating;
 
               return (
-                <div className="p-3 bg-white rounded-lg border border-stone-200 text-xs space-y-2 shadow-2xs">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="p-3.5 bg-white rounded-lg border border-stone-200 text-xs space-y-3 shadow-2xs">
+                  {/* Top line: YP/PV & Model Badge */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-2.5">
                     <div className="flex items-center gap-2">
                       <span className="text-stone-600 font-medium">Соотношение YP / PV:</span>
                       <span className="font-bold text-stone-900 font-mono text-sm bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
@@ -498,21 +501,81 @@ export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
                       </span>
                     </div>
 
-                    <span
-                      className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
-                        evalRes.model === 'non_treated'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : evalRes.model === 'drilling_grade'
-                          ? 'bg-blue-100 text-blue-800'
-                          : evalRes.model === 'ocma'
-                          ? 'bg-amber-100 text-amber-800'
-                          : evalRes.model === 'marginal_ocma'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-stone-100 text-stone-700'
-                      }`}
-                    >
-                      {evalRes.suitabilitySummary}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase ${
+                          evalRes.apiModelQuality === 'excellent'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : evalRes.apiModelQuality === 'good'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                            : evalRes.apiModelQuality === 'limited'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : 'bg-red-100 text-red-800 border border-red-300'
+                        }`}
+                      >
+                        Оценка модели: {evalRes.apiModelQualityLabel}
+                      </span>
+                      <span
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
+                          evalRes.model === 'non_treated'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : evalRes.model === 'drilling_grade'
+                            ? 'bg-blue-100 text-blue-800'
+                            : evalRes.model === 'ocma'
+                            ? 'bg-amber-100 text-amber-800'
+                            : evalRes.model === 'marginal_ocma'
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-stone-100 text-stone-700'
+                        }`}
+                      >
+                        {evalRes.suitabilitySummary}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* New Parameter: Степень замещения на натрий x = YP / F600 */}
+                  <div className="p-2.5 rounded-lg bg-amber-50/60 border border-amber-200/90 space-y-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-stone-900">
+                          Степень замещения на натрий (по данным API-теста):
+                        </span>
+                        <span className="font-mono font-bold text-amber-900 text-sm bg-white px-2 py-0.5 rounded border border-amber-300 shadow-2xs">
+                          x = {xVal.toFixed(3)}
+                        </span>
+                        <span className="text-[11px] text-stone-500 font-mono">
+                          (YP / ф600 = {evalRes.yp} / {f600Val})
+                        </span>
+                      </div>
+
+                      <span
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
+                          xRating === 'optimal'
+                            ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                            : xRating === 'acceptable'
+                            ? 'bg-blue-100 text-blue-900 border border-blue-300'
+                            : 'bg-red-100 text-red-900 border border-red-300'
+                        }`}
+                      >
+                        {evalRes.sodiumSubstitutionLabel}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-stone-700 leading-relaxed">
+                      {evalRes.sodiumSubstitutionDescription}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-stone-600 pt-1 border-t border-amber-200/60">
+                      <span>
+                        <strong className="text-emerald-700">✓ Хороший уровень (Оптимально):</strong> 0,30 – 0,60 (сохранение тактоидов с галереями)
+                      </span>
+                      <span>
+                        <strong className="text-blue-700">• Приемлемый:</strong> 0,20 – 0,30 и 0,60 – 0,75
+                      </span>
+                      <span>
+                        <strong className="text-red-700">✗ Неприемлемый:</strong> &lt; 0,20 (недоактивация) или &gt; 0,75 (монослойный распад)
+                      </span>
+                    </div>
                   </div>
 
                   <p className="text-stone-600 text-xs leading-relaxed">

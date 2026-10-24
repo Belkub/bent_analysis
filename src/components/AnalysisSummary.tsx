@@ -36,6 +36,7 @@ interface AnalysisSummaryProps {
   onOpenGelModal: () => void;
   onOpenMillingModal: () => void;
   onOpenIomModal: () => void;
+  onOpenApiRoleModal: () => void;
 }
 
 export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
@@ -52,6 +53,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
   onOpenGelModal,
   onOpenMillingModal,
   onOpenIomModal,
+  onOpenApiRoleModal,
 }) => {
   const [industryTab, setIndustryTab] = useState<'applicable' | 'suitable' | 'limited' | 'all'>('applicable');
   const colorInfo = BENTONITE_COLORS.find((c) => c.id === colorId) || BENTONITE_COLORS[0];
@@ -254,24 +256,66 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
                   <span className="text-sm font-bold text-stone-900 leading-tight">
                     {apiModel.label}
                   </span>
-                  {apiModel.suitabilitySummary && (
+                  <div className="flex flex-col items-end gap-1">
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
-                        apiModel.model === 'non_treated'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : apiModel.model === 'drilling_grade'
-                          ? 'bg-blue-100 text-blue-800'
-                          : apiModel.model === 'ocma'
-                          ? 'bg-amber-100 text-amber-800'
-                          : apiModel.model === 'marginal_ocma'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-stone-100 text-stone-700'
+                      className={`text-[9.5px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                        apiModel.apiModelQuality === 'excellent'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : apiModel.apiModelQuality === 'good'
+                          ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                          : apiModel.apiModelQuality === 'limited'
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                          : 'bg-red-100 text-red-800 border border-red-300'
                       }`}
                     >
-                      {apiModel.suitabilitySummary}
+                      {apiModel.apiModelQualityLabel}
                     </span>
-                  )}
+                    {apiModel.suitabilitySummary && (
+                      <span
+                        className={`text-[9.5px] px-1.5 py-0.5 rounded font-bold shrink-0 ${
+                          apiModel.model === 'non_treated'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : apiModel.model === 'drilling_grade'
+                            ? 'bg-blue-100 text-blue-800'
+                            : apiModel.model === 'ocma'
+                            ? 'bg-amber-100 text-amber-800'
+                            : apiModel.model === 'marginal_ocma'
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-stone-100 text-stone-700'
+                        }`}
+                      >
+                        {apiModel.suitabilitySummary}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
+                {/* Sodium Substitution Degree x */}
+                <div className="my-1.5 p-2 rounded-lg bg-stone-50 border border-stone-200">
+                  <div className="flex items-center justify-between text-xs mb-0.5">
+                    <span className="text-stone-500 font-medium">Замещение Na (x):</span>
+                    <span className="font-mono font-bold text-amber-900">
+                      x = {apiModel.sodiumSubstitutionDegree ?? '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`text-[10px] px-2 py-0.2 rounded font-bold ${
+                        apiModel.sodiumSubstitutionRating === 'optimal'
+                          ? 'bg-emerald-100 text-emerald-900'
+                          : apiModel.sodiumSubstitutionRating === 'acceptable'
+                          ? 'bg-blue-100 text-blue-900'
+                          : 'bg-red-100 text-red-900'
+                      }`}
+                    >
+                      {apiModel.sodiumSubstitutionLabel}
+                    </span>
+                    <span className="text-[10px] text-stone-400 font-mono">
+                      (норм: 0,3–0,6)
+                    </span>
+                  </div>
+                </div>
+
                 <p className="text-xs text-stone-600 mt-1 leading-snug">
                   {apiModel.description}
                 </p>
@@ -297,11 +341,15 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               </div>
             )}
           </div>
-          <div className="mt-3 pt-2 border-t border-stone-100 text-[11px] text-stone-500">
-            {apiModel?.ratio !== undefined && apiModel.ratio <= 1.5
-              ? '🎯 Идеал: YP/PV ≤ 1.5 и ф600 ≥ 30'
-              : 'Критерии: non-treated ≤ 1.5, drilling ≤ 3, OCMA ≤ 6, среднесортная ОГ 6–8'}
-          </div>
+          <button
+            type="button"
+            id="open-api-role-card-btn"
+            onClick={onOpenApiRoleModal}
+            className="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-xs text-amber-700 font-semibold hover:text-amber-900 w-full cursor-pointer"
+          >
+            <span>Роль API-теста и тактоиды</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
@@ -490,6 +538,51 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
                     ))}
                   </div>
 
+                  {/* API Model & Sodium substitution assessment for this industry */}
+                  {ind.apiSummary ? (
+                    <div className="mt-2.5 p-2 rounded-lg bg-white/90 border border-stone-200 text-[11px] space-y-1 shadow-2xs">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
+                        <span className="font-semibold text-stone-800">API-модель сырья:</span>
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                            ind.apiSummary.modelQuality === 'excellent'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : ind.apiSummary.modelQuality === 'good'
+                              ? 'bg-blue-100 text-blue-800'
+                              : ind.apiSummary.modelQuality === 'limited'
+                              ? 'bg-amber-100 text-amber-900'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {ind.apiSummary.modelQualityLabel} ({ind.apiSummary.modelLabel.split(' (')[0]})
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-stone-600 font-mono">
+                          Замещение Na: <strong>x = {ind.apiSummary.sodiumSubstitutionDegree}</strong>
+                        </span>
+                        <span
+                          className={`font-semibold ${
+                            ind.apiSummary.sodiumSubstitutionRating === 'optimal'
+                              ? 'text-emerald-700'
+                              : ind.apiSummary.sodiumSubstitutionRating === 'acceptable'
+                              ? 'text-blue-700'
+                              : 'text-red-700'
+                          }`}
+                        >
+                          {ind.apiSummary.sodiumSubstitutionLabel}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-stone-600 leading-snug border-t border-stone-100 pt-1">
+                        {ind.apiSummary.conclusion}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-[10px] text-stone-400 italic">
+                      API-тест не внесен: рекомендуется измерение ф600/ф300 для оценки тактоидов.
+                    </div>
+                  )}
+
                   {/* Summary of environment and rheology */}
                   <div className="mt-3 pt-2.5 border-t border-stone-200/80 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                     <div>
@@ -595,13 +688,13 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {/* Button 1 */}
           <button
             type="button"
             id="modal-btn-impurities"
             onClick={onOpenImpuritiesModal}
-            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group"
+            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div>
               <div className="flex items-center justify-between text-amber-400 mb-1">
@@ -622,7 +715,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             type="button"
             id="modal-btn-color"
             onClick={onOpenColorModal}
-            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group"
+            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div>
               <div className="flex items-center justify-between text-amber-400 mb-1">
@@ -643,7 +736,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             type="button"
             id="modal-btn-gel"
             onClick={onOpenGelModal}
-            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group"
+            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div>
               <div className="flex items-center justify-between text-amber-400 mb-1">
@@ -664,7 +757,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             type="button"
             id="modal-btn-milling"
             onClick={onOpenMillingModal}
-            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group"
+            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div>
               <div className="flex items-center justify-between text-amber-400 mb-1">
@@ -685,7 +778,7 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             type="button"
             id="modal-btn-iom"
             onClick={onOpenIomModal}
-            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group"
+            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group cursor-pointer"
           >
             <div>
               <div className="flex items-center justify-between text-amber-400 mb-1">
@@ -698,6 +791,27 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
             </div>
             <span className="text-[10px] text-stone-400 mt-2 block">
               Множители Na/Ca, Si/Fe, КОЕ
+            </span>
+          </button>
+
+          {/* Button 6: New API Role Section */}
+          <button
+            type="button"
+            id="modal-btn-api-role"
+            onClick={onOpenApiRoleModal}
+            className="p-3 rounded-lg bg-stone-800 hover:bg-amber-900/60 border border-stone-700 hover:border-amber-600 transition-all text-left flex flex-col justify-between group cursor-pointer"
+          >
+            <div>
+              <div className="flex items-center justify-between text-amber-400 mb-1">
+                <Target className="w-4 h-4" />
+                <ArrowUpRight className="w-3.5 h-3.5 text-stone-500 group-hover:text-amber-400 transition-colors" />
+              </div>
+              <strong className="text-xs font-bold text-white block">
+                Роль API-теста в органомодификации
+              </strong>
+            </div>
+            <span className="text-[10px] text-stone-400 mt-2 block">
+              Тактоиды, x = YP/ф600, 3 сценария
             </span>
           </button>
         </div>

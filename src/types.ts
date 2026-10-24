@@ -103,6 +103,36 @@ export interface IomCalculationDetails {
   missingParams: string[];
 }
 
+export type SodiumSubstitutionRating = 'optimal' | 'acceptable' | 'unacceptable';
+export type ApiModelQuality = 'excellent' | 'good' | 'limited' | 'unacceptable';
+
+export interface ApiRheologyEvaluation {
+  model: ApiModel;
+  label: string;
+  description: string;
+  pv: number;
+  yp: number;
+  ratio: number;
+  suitabilitySummary?: string;
+  recommendation?: string;
+  sodiumSubstitutionDegree?: number; // x = YP / F600
+  sodiumSubstitutionRating?: SodiumSubstitutionRating;
+  sodiumSubstitutionLabel?: string;
+  sodiumSubstitutionDescription?: string;
+  apiModelQuality?: ApiModelQuality;
+  apiModelQualityLabel?: string;
+}
+
+export interface IndustryApiSummary {
+  modelLabel: string;
+  modelQuality: ApiModelQuality;
+  modelQualityLabel: string; // 'Отлично' | 'Хорошо' | 'Ограниченно' | 'Неприемлемо'
+  sodiumSubstitutionDegree?: number;
+  sodiumSubstitutionRating?: SodiumSubstitutionRating;
+  sodiumSubstitutionLabel?: string;
+  conclusion: string;
+}
+
 export interface IndustrySuitability {
   subIndustryId: string;
   code: string;
@@ -131,6 +161,7 @@ export interface IndustrySuitability {
   optimalMilling: string;
   suboptimalMilling: string;
   particleSize: string;
+  apiSummary?: IndustryApiSummary;
 }
 
 export interface AnalysisResults {
@@ -140,16 +171,7 @@ export interface AnalysisResults {
   colorInterpretation: string;
   impurities: ImpurityCalculationDetails;
   iom: IomCalculationDetails;
-  apiModel?: {
-    model: ApiModel;
-    label: string;
-    description: string;
-    pv: number;
-    yp: number;
-    ratio: number;
-    suitabilitySummary?: string;
-    recommendation?: string;
-  };
+  apiModel?: ApiRheologyEvaluation;
   suitableIndustries: IndustrySuitability[];
   limitedIndustries: IndustrySuitability[];
   applicableIndustries: IndustrySuitability[];

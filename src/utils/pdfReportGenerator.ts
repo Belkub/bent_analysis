@@ -254,12 +254,28 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
                   ${activation ? `Да (введено ${sodaPercent ?? 0}% Na₂CO₃)` : 'Нет (естественная форма бентонита)'}
                 </td>
               </tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 4px 0; color: #64748b;">Степень замещения натрием (x = YP/ф600):</td>
+                <td style="padding: 4px 0; font-weight: 700; text-align: right; color: ${
+                  apiModel?.sodiumSubstitutionRating === 'optimal'
+                    ? '#166534'
+                    : apiModel?.sodiumSubstitutionRating === 'acceptable'
+                    ? '#1e40af'
+                    : '#991b1b'
+                };">
+                  ${
+                    apiModel?.sodiumSubstitutionDegree !== undefined
+                      ? `x = ${apiModel.sodiumSubstitutionDegree} (${apiModel.sodiumSubstitutionLabel})`
+                      : 'Не определено'
+                  }
+                </td>
+              </tr>
               <tr>
                 <td style="padding: 4px 0; color: #64748b;">Реология 6% суспензии (API тест):</td>
                 <td style="padding: 4px 0; font-weight: 700; text-align: right; color: #0f172a;">
                   ${
                     apiModel
-                      ? `PV: ${apiModel.pv} сПз | YP: ${apiModel.yp} дфунт/100фт² (YP/PV = ${apiModel.ratio})`
+                      ? `PV: ${apiModel.pv} сПз | YP: ${apiModel.yp} дфунт/100фт² (YP/PV = ${apiModel.ratio}) • ${apiModel.apiModelQualityLabel || 'API'}`
                       : (apiTest.f600 !== undefined ? `ф600 = ${apiTest.f600}, ф300 = ${apiTest.f300}` : 'Не исследовано')
                   }
                 </td>
@@ -539,64 +555,106 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
       <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background-color: #ffffff; margin-bottom: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
           <div style="font-size: 11px; font-weight: 800; color: #b45309; text-transform: uppercase;">
-            4.4. Реологическая модель API и эффективность активации
+            4.4. Реологическая модель API, степень замещения натрия и сохранение тактоидов
           </div>
-          ${
-            apiModel?.suitabilitySummary
-              ? `<span style="font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background-color: ${
-                  apiModel.model === 'non_treated'
-                    ? '#dcfce7; color: #166534;'
-                    : apiModel.model === 'drilling_grade'
-                    ? '#dbeafe; color: #1e40af;'
-                    : apiModel.model === 'ocma'
-                    ? '#fef3c7; color: #92400e;'
-                    : apiModel.model === 'marginal_ocma'
-                    ? '#ffedd5; color: #9a3412;'
-                    : '#f1f5f9; color: #334155;'
-                }">
-                  ${apiModel.suitabilitySummary}
-                </span>`
-              : ''
-          }
+          <div style="display: flex; align-items: center; gap: 4px;">
+            ${
+              apiModel?.apiModelQualityLabel
+                ? `<span style="font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; background-color: ${
+                    apiModel.apiModelQuality === 'excellent'
+                      ? '#dcfce7; color: #166534; border: 1px solid #86efac;'
+                      : apiModel.apiModelQuality === 'good'
+                      ? '#dbeafe; color: #1e40af; border: 1px solid #93c5fd;'
+                      : apiModel.apiModelQuality === 'limited'
+                      ? '#fef3c7; color: #92400e; border: 1px solid #fde68a;'
+                      : '#fee2e2; color: #991b1b; border: 1px solid #fca5a5;'
+                  }">
+                    Модель: ${apiModel.apiModelQualityLabel}
+                  </span>`
+                : ''
+            }
+            ${
+              apiModel?.suitabilitySummary
+                ? `<span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background-color: #f1f5f9; color: #334155;">
+                    ${apiModel.suitabilitySummary}
+                  </span>`
+                : ''
+            }
+          </div>
         </div>
 
         ${
           apiModel
             ? `
-              <div style="margin-bottom: 6px;">
-                <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 3px;">
+              <div style="margin-bottom: 5px;">
+                <div style="font-size: 12.5px; font-weight: 800; color: #0f172a; margin-bottom: 2px;">
                   ${apiModel.label}
                 </div>
-                <div style="font-size: 10px; line-height: 1.4; color: #334155; margin-bottom: 6px;">
+                <div style="font-size: 9.5px; line-height: 1.35; color: #334155; margin-bottom: 5px;">
                   ${apiModel.description}
+                </div>
+              </div>
+
+              <!-- Degree of Sodium Substitution x Card -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 9px;">
+                <div>
+                  <span style="color: #92400e; font-size: 8px; font-weight: 800; text-transform: uppercase; display: block;">
+                    Степень замещения натрием (x = YP / F₆₀₀):
+                  </span>
+                  <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 1px;">
+                    <strong style="color: #78350f; font-size: 12px; font-family: monospace;">x = ${apiModel.sodiumSubstitutionDegree}</strong>
+                    <span style="font-size: 8.5px; font-weight: 700; padding: 1px 5px; border-radius: 3px; background-color: ${
+                      apiModel.sodiumSubstitutionRating === 'optimal'
+                        ? '#dcfce7; color: #166534;'
+                        : apiModel.sodiumSubstitutionRating === 'acceptable'
+                        ? '#dbeafe; color: #1e40af;'
+                        : '#fee2e2; color: #991b1b;'
+                    }">
+                      ${apiModel.sodiumSubstitutionLabel}
+                    </span>
+                  </div>
+                  <span style="color: #64748b; font-size: 7.5px; display: block; margin-top: 1px;">
+                    Нормы: 0,30–0,60 (Оптимально) • 0,20–0,30 и 0,60–0,75 (Приемлемо) • &gt;0,75 и &lt;0,20 (Неприемлемо)
+                  </span>
+                </div>
+                <div style="font-size: 8px; color: #78350f; line-height: 1.3;">
+                  <strong>Физический смысл в ОМ:</strong> ${
+                    apiModel.sodiumSubstitutionDescription ||
+                    'Контроль сохранения многослойных тактоидов с межслоевыми галереями для закрепления ЧАС.'
+                  }
                 </div>
               </div>
 
               ${
                 apiModel.recommendation
                   ? `
-                    <div style="font-size: 9.5px; line-height: 1.35; color: #78350f; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px;">
+                    <div style="font-size: 9px; line-height: 1.3; color: #78350f; background-color: #fefce8; border: 1px solid #fef08a; border-radius: 5px; padding: 5px 8px; margin-bottom: 6px;">
                       <strong>💡 Рекомендация технолога:</strong> ${apiModel.recommendation}
                     </div>
                   `
                   : ''
               }
 
-              <div style="display: flex; justify-content: space-between; align-items: center; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; font-size: 10px;">
+              <!-- Viscosity Parameters Row -->
+              <div style="display: flex; justify-content: space-between; align-items: center; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 8px; font-size: 9.5px; margin-bottom: 5px;">
                 <div style="font-family: monospace; color: #0f172a;">
-                  PV: <strong>${apiModel.pv} сПз</strong> | YP: <strong>${apiModel.yp} дфунт/100фт²</strong> | YP/PV: <strong style="color: #b45309; font-size: 11.5px;">${apiModel.ratio}</strong>
+                  PV: <strong>${apiModel.pv} сПз</strong> | YP: <strong>${apiModel.yp} дфунт/100фт²</strong> | YP/PV: <strong style="color: #b45309; font-size: 11px;">${apiModel.ratio}</strong>
                 </div>
-                <div style="font-size: 9px; color: #64748b;">
+                <div style="font-size: 8.5px; color: #64748b;">
                   ${
                     apiModel.ratio <= 1.5
-                      ? '🎯 Идеал: YP/PV ≤ 1.5 (Non-treated сорт)'
+                      ? '🎯 Отлично: Non-treated сорт (YP/PV ≤ 1.5)'
                       : apiModel.ratio <= 3.0
-                      ? '✓ Drilling grade: YP/PV ≤ 3.0'
+                      ? '✓ Отлично: Drilling grade (YP/PV ≤ 3.0)'
                       : apiModel.ratio <= 6.0
-                      ? '⚠️ OCMA grade: YP/PV 3.0–6.0'
-                      : '⚠️ Среднесортная ОГ: YP/PV 6.0–8.0'
+                      ? '✓ Хорошо: OCMA grade (YP/PV ≤ 6.0)'
+                      : '⚠️ Ограниченно: Среднесортная ОГ (YP/PV 6.0–8.0)'
                   }
                 </div>
+              </div>
+
+              <div style="font-size: 8px; color: #475569; line-height: 1.3; background-color: #f1f5f9; padding: 4px 8px; border-radius: 4px;">
+                <strong>Механизм органомодификации:</strong> При YP/PV ≤ 3.0 и x = 0,3–0,6 глинистые частицы находятся в виде многослойных тактоидов с открытыми галереями. Рост YP/PV &gt; 6 сигнализирует о деструкции (Сценарий А: содовая пептизация до монослоев; Сценарий Б: компенсация зарядом силанолов при высоком pH; Сценарий В: сжатие ДЭС электролитами).
               </div>
             `
             : `
@@ -737,10 +795,10 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
                   </div>
 
                   <!-- Full Conditions without Abbreviations -->
-                  <div style="font-size: 8px; line-height: 1.25; margin-bottom: 3px;">
+                  <div style="font-size: 8px; line-height: 1.25; margin-bottom: 2px;">
                     ${
                       ind.reasonsPass.length > 0
-                        ? `<div style="color: #15803d; margin-bottom: 1.5px;">
+                        ? `<div style="color: #15803d; margin-bottom: 1px;">
                              ✓ <strong>Выполнено:</strong> ${ind.reasonsPass.join('; ')}
                            </div>`
                         : ''
@@ -753,6 +811,33 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
                         : ''
                     }
                   </div>
+
+                  <!-- API Model and Sodium Substitution Assessment -->
+                  ${
+                    ind.apiSummary
+                      ? `
+                        <div style="font-size: 7.2px; background-color: #ffffff; border: 1px solid ${
+                          isOk ? '#bbf7d0' : isLimited ? '#fde68a' : '#cbd5e1'
+                        }; border-radius: 3px; padding: 2px 4px; margin-bottom: 2px;">
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 800; color: ${
+                              ind.apiSummary.modelQuality === 'excellent'
+                                ? '#166534'
+                                : ind.apiSummary.modelQuality === 'good'
+                                ? '#1e40af'
+                                : ind.apiSummary.modelQuality === 'limited'
+                                ? '#92400e'
+                                : '#991b1b'
+                            };">API: ${ind.apiSummary.modelQualityLabel} (${ind.apiSummary.modelLabel.split(' (')[0]})</span>
+                            <span style="color: #64748b; font-family: monospace;">x = ${ind.apiSummary.sodiumSubstitutionDegree}</span>
+                          </div>
+                          <div style="color: #475569; font-size: 6.8px; margin-top: 1px; line-height: 1.2;">
+                            ${ind.apiSummary.conclusion}
+                          </div>
+                        </div>
+                      `
+                      : ''
+                  }
                 </div>
 
                 <!-- Parameters summary bar -->
@@ -1012,23 +1097,44 @@ export async function generateBentoniteOnePagePdfReport(payload: PdfReportPayloa
 
         <!-- Card 4: Rheology -->
         <div style="border: 1px solid #e2e8f0; border-radius: 5px; padding: 6px 8px; background-color: #f8fafc;">
-          <div style="font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase;">4. Реология API (6%)</div>
-          <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 1px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase;">4. Реология API (6%)</span>
+            ${
+              apiModel?.apiModelQualityLabel
+                ? `<span style="font-size: 7.5px; font-weight: 800; padding: 1px 4px; border-radius: 3px; background-color: ${
+                    apiModel.apiModelQuality === 'excellent'
+                      ? '#dcfce7; color: #166534;'
+                      : apiModel.apiModelQuality === 'good'
+                      ? '#dbeafe; color: #1e40af;'
+                      : apiModel.apiModelQuality === 'limited'
+                      ? '#fef3c7; color: #92400e;'
+                      : '#fee2e2; color: #991b1b;'
+                  };">
+                    ${apiModel.apiModelQualityLabel}
+                  </span>`
+                : ''
+            }
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 5px; margin-top: 1px;">
             <div>
-              <span style="font-size: 7.5px; color: #64748b;">PV:</span>
-              <span style="font-size: 11px; font-weight: 800; color: #0f172a;">${apiModel?.pv !== undefined ? `${apiModel.pv} сП` : '—'}</span>
+              <span style="font-size: 7px; color: #64748b;">PV:</span>
+              <span style="font-size: 10.5px; font-weight: 800; color: #0f172a;">${apiModel?.pv !== undefined ? `${apiModel.pv}` : '—'}</span>
             </div>
             <div>
-              <span style="font-size: 7.5px; color: #64748b;">YP:</span>
-              <span style="font-size: 11px; font-weight: 800; color: #0f172a;">${apiModel?.yp !== undefined ? `${apiModel.yp} lb` : '—'}</span>
+              <span style="font-size: 7px; color: #64748b;">YP:</span>
+              <span style="font-size: 10.5px; font-weight: 800; color: #0f172a;">${apiModel?.yp !== undefined ? `${apiModel.yp}` : '—'}</span>
             </div>
             <div>
-              <span style="font-size: 7.5px; color: #64748b;">YP/PV:</span>
-              <span style="font-size: 11px; font-weight: 800; color: #b45309;">${apiModel?.ratio !== undefined ? `${apiModel.ratio}` : '—'}</span>
+              <span style="font-size: 7px; color: #64748b;">YP/PV:</span>
+              <span style="font-size: 10.5px; font-weight: 800; color: #b45309;">${apiModel?.ratio !== undefined ? `${apiModel.ratio}` : '—'}</span>
             </div>
           </div>
-          <div style="font-size: 7.5px; color: #475569; margin-top: 1px;">
-            ${apiModel ? apiModel.label : (apiTest.f600 !== undefined ? `ф600: ${apiTest.f600}, ф300: ${apiTest.f300}` : 'Естественная реология')}
+          <div style="font-size: 7px; color: #475569; margin-top: 1px; line-height: 1.2;">
+            ${
+              apiModel?.sodiumSubstitutionDegree !== undefined
+                ? `x(Na) = <strong>${apiModel.sodiumSubstitutionDegree}</strong> (${apiModel.sodiumSubstitutionLabel.split(' ')[0]})`
+                : (apiTest.f600 !== undefined ? `ф600: ${apiTest.f600}, ф300: ${apiTest.f300}` : 'Естественная реология')
+            }
           </div>
         </div>
       </div>
@@ -1160,6 +1266,24 @@ export async function generateBentoniteOnePagePdfReport(payload: PdfReportPayloa
                         : `<span style="color: #b91c1c;">✗ Причины отказа: ${ind.reasonsFail.join('; ')}</span>`
                     }
                   </div>
+
+                  ${
+                    ind.apiSummary
+                      ? `
+                        <div style="font-size: 6.8px; color: #475569; margin-top: 1px; line-height: 1.2;">
+                          <strong>API:</strong> <span style="font-weight: 700; color: ${
+                            ind.apiSummary.modelQuality === 'excellent'
+                              ? '#166534'
+                              : ind.apiSummary.modelQuality === 'good'
+                              ? '#1e40af'
+                              : ind.apiSummary.modelQuality === 'limited'
+                              ? '#92400e'
+                              : '#991b1b'
+                          };">${ind.apiSummary.modelQualityLabel}</span> • x = ${ind.apiSummary.sodiumSubstitutionDegree} (${ind.apiSummary.sodiumSubstitutionLabel.split(' ')[0]})
+                        </div>
+                      `
+                      : ''
+                  }
 
                   <div style="display: flex; justify-content: space-between; font-size: 7px; color: #64748b; margin-top: 2px; border-top: 1px dashed ${
                     isOk ? '#bbf7d0' : isLimited ? '#fde68a' : '#cbd5e1'

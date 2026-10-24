@@ -6,26 +6,19 @@ import {
   ApiModel,
   ImpurityCalculationDetails,
   IomCalculationDetails,
-  IndustrySuitability
+  IndustrySuitability,
+  ApiRheologyEvaluation,
+  SodiumSubstitutionRating,
+  ApiModelQuality,
+  IndustryApiSummary,
 } from '../types';
 import { BENTONITE_COLORS, INDUSTRY_SPECS, CEC_SMECTITE_MATRIX } from '../data/mineralData';
 
-export interface ApiRheologyEvaluation {
-  model: ApiModel;
-  label: string;
-  description: string;
-  pv: number;
-  yp: number;
-  ratio: number;
-  suitabilitySummary?: string;
-  recommendation?: string;
-}
-
 /**
  * Оценка реологии бентонита по API-тесту и пригодности для органомодификации (ОМ).
- * Правила:
+ * Реологические критерии стандарта API и механизмы поведения бентонитовых суспензий:
  * 1. Базовые переделы YP/PV:
- *    - YP/PV <= 1.5: 'non-treated' (наилучшая для ОМ)
+ *    - YP/PV <= 1.5: 'non-treated' (наилучшая для ОМ, сохранение тактоидов с межслоевыми галереями)
  *    - YP/PV <= 3.0: 'drilling grade' (хорошая для ОМ)
  *    - YP/PV <= 6.0: 'OCMA' (приемлемая для ОМ)
  *    - YP/PV 6.0 .. 8.0: ограниченно пригоден для ОМ при получении среднесортной ОГ.
@@ -35,6 +28,15 @@ export interface ApiRheologyEvaluation {
  *      но добавляется фраза о рекомендации активации содой 0,3 - 1,5 % для увеличения показателя ф600 выше 30.
  * 3. Если ф600 < 18:
  *    - Нестандартная марка (недостаточная вязкость суспензии).
+ * 4. Степень замещения на натрий по данным API-теста x = YP / F600:
+ *    - Хороший уровень (Оптимально): 0,3 - 0,6
+ *    - Приемлемый уровень: 0,2 - 0,3 и 0,6 - 0,75
+ *    - Неприемлемый уровень: выше 0,75 (риск монослойной пептизации / распада тактоидов) и ниже 0,2 (недоактивация)
+ * 5. Классификация API-модели для отраслевых отчетов:
+ *    - "Отлично" при non-treated или drilling grade (YP/PV <= 3.0)
+ *    - "Хорошо" при OCMA (YP/PV <= 6.0)
+ *    - "Ограниченно" при marginal_ocma (YP/PV 6.0–8.0)
+ *    - "Неприемлемо / Нестандартно" при non_standard
  */
 export function evaluateApiRheology(
   f600: number,
@@ -45,6 +47,36 @@ export function evaluateApiRheology(
   const pv = userPv !== undefined ? userPv : f600 - f300;
   const yp = userYp !== undefined ? userYp : f300 - pv;
   const ratio = pv > 0 ? Number((yp / pv).toFixed(2)) : 0;
+  const sodiumSubstitutionDegree = f600 > 0 ? Number((yp / f600).toFixed(3)) : 0;
+
+  // Оценка степени замещения на натрий x = YP / F600
+  let sodiumSubstitutionRating: SodiumSubstitutionRating = 'unacceptable';
+  let sodiumSubstitutionLabel = 'Неприемлемый уровень';
+  let sodiumSubstitutionDescription = '';
+
+  if (sodiumSubstitutionDegree >= 0.3 && sodiumSubstitutionDegree <= 0.6) {
+    sodiumSubstitutionRating = 'optimal';
+    sodiumSubstitutionLabel = 'Хороший уровень (Оптимально)';
+    sodiumSubstitutionDescription =
+      'Оптимальная степень замещения (0,30–0,60): сохраняется многослойная тактоидная структура с открытыми межслоевыми галереями для полноценной интеркаляции ЧАС.';
+  } else if (
+    (sodiumSubstitutionDegree >= 0.2 && sodiumSubstitutionDegree < 0.3) ||
+    (sodiumSubstitutionDegree > 0.6 && sodiumSubstitutionDegree <= 0.75)
+  ) {
+    sodiumSubstitutionRating = 'acceptable';
+    sodiumSubstitutionLabel = 'Приемлемый уровень';
+    sodiumSubstitutionDescription =
+      sodiumSubstitutionDegree < 0.3
+        ? 'Умеренное замещение (0,20–0,30): тактоиды сохранены, но раскрытие пластинок может требовать увеличенного времени сдвига.'
+        : 'Повышенное замещение (0,60–0,75): допустимо, но возрастает риск частичного распада тактоидов при интенсивном диспергировании.';
+  } else {
+    sodiumSubstitutionRating = 'unacceptable';
+    sodiumSubstitutionLabel = 'Неприемлемый уровень';
+    sodiumSubstitutionDescription =
+      sodiumSubstitutionDegree > 0.75
+        ? 'Критическая переактивация (x > 0,75): кристаллические пакеты расщепляются до монослоев, межслоевые галереи исчезают, ЧАС закрепляться негде.'
+        : 'Недостаточная активация (x < 0,20): преобладают нераскрытые плотные кальциевые агрегаты с низкой гидрофильной раздвижкой.';
+  }
 
   // Проверка условия ф600 от 18 до 29 (либо ratio 18..29)
   const isNearTargetF600 = (f600 >= 18 && f600 < 30) || (ratio >= 18 && ratio <= 29);
@@ -63,29 +95,28 @@ export function evaluateApiRheology(
       label = "Модель 'non-treated'";
       suitabilitySummary = 'Наилучшая для органомодификации (ОМ)';
       description =
-        'Наилучшая для органомодификации (ОМ): равномерный выход вязкости, минимальный избыточный тиксотропный сдвиг.';
+        'Наилучшая для органомодификации (ОМ): равномерный выход вязкости, частицы остаются многослойными тактоидами с открытыми галереями для ЧАС.';
     } else if (ratio <= 3.0) {
       model = 'drilling_grade';
       label = "Модель 'drilling grade'";
       suitabilitySummary = 'Хорошая для органомодификации (ОМ)';
       description =
-        'Хорошая для органомодификации (ОМ): стандартная буровая марка с качественной содовой активацией.';
+        'Хорошая для органомодификации (ОМ): стандартная буровая марка с качественной содовой активацией и сохранными тактоидами.';
     } else if (ratio <= 6.0) {
       model = 'ocma';
       label = "Модель 'OCMA'";
       suitabilitySummary = 'Приемлемая для органомодификации (ОМ)';
       description =
-        'Приемлемая для органомодификации (ОМ): допустимый диапазон, возможен повышенный расход активатора.';
+        'Приемлемая для органомодификации (ОМ): допустимый диапазон, умеренная пептизация пакетов.';
     } else if (ratio <= 8.0) {
       // ratio в интервале 6 - 8
       model = 'marginal_ocma';
       label = 'Ограниченно пригодная марка (YP/PV 6–8)';
       suitabilitySummary = 'Ограниченно пригоден для ОМ (среднесортная ОГ)';
-      recommendation = 'Если глина активирована, то рекомендуется снизить вложение соды.';
+      recommendation = 'Если глина активирована, то рекомендуется снизить вложение соды во избежание монослойного распада.';
       description =
-        'Бентонит ограниченно пригоден для ОМ при получении среднесортной ОГ, если глина активирована, то рекомендуется снизить вложение соды.';
+        'Бентонит ограниченно пригоден для ОМ при получении среднесортной ОГ. Если глина активирована, то рекомендуется снизить вложение соды.';
     } else if (ratio >= 18 && ratio <= 29) {
-      // Дополнительная поддержка буквального соотношения YP/PV 18..29
       model = 'ocma';
       label = "Модель 'OCMA' (соотношение 18–29)";
       suitabilitySummary = 'Приемлемая степень пригодности для ОМ сохраняется';
@@ -96,7 +127,7 @@ export function evaluateApiRheology(
       model = 'non_standard';
       label = 'Нестандартная марка (YP/PV > 8)';
       suitabilitySummary = 'Не соответствует стандартам ОМ';
-      description = `Показатели API не соответствуют стандартам ОМ: избыточный тиксотропный сдвиг (YP/PV = ${ratio} > 8).`;
+      description = `Показатели API не соответствуют стандартам ОМ: избыточный тиксотропный сдвиг (YP/PV = ${ratio} > 8). Высок риск разрушения тактоидов до монослоев.`;
     }
   } else if (isNearTargetF600) {
     // ф600 от 18 до 29: степень пригодности сохраняется по YP/PV + рекомендация активации содой 0,3 - 1,5%
@@ -118,14 +149,13 @@ export function evaluateApiRheology(
       suitabilitySummary = 'Приемлемая пригодность для ОМ (требует доактивации)';
       description = `Приемлемая для органомодификации (ОМ): допустимый диапазон реологии (YP/PV = ${ratio} ≤ 6.0). Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.`;
     } else if (ratio <= 8.0) {
-      // ratio в интервале 6 - 8 при ф600 18..29
       model = 'marginal_ocma';
       label = 'Ограниченно пригодная марка (ф600 18–29, YP/PV 6–8)';
       suitabilitySummary = 'Ограниченно пригоден для ОМ (среднесортная ОГ)';
       recommendation =
         'Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30 (если глина активирована, снизить вложение соды).';
       description =
-        'Бентонит ограниченно пригоден для ОМ при получении среднесортной ОГ. Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30 (если глина активирована, то рекомендуется снизить вложение соды).';
+        'Бентонит ограниченно пригоден для ОМ при получении среднесортной ОГ. Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.';
     } else {
       model = 'non_standard';
       label = 'Нестандартная марка';
@@ -141,6 +171,24 @@ export function evaluateApiRheology(
     description = `Показатели API ниже допустимых порогов (ф600 = ${f600} < 18, недостаточная вязкость суспензии). Рекомендуется активация содой или проверка содержания смектита.`;
   }
 
+  // API model quality rating for industry reports
+  let apiModelQuality: ApiModelQuality = 'unacceptable';
+  let apiModelQualityLabel = 'Неприемлемо / Нестандартно';
+
+  if (model === 'non_treated' || model === 'drilling_grade') {
+    apiModelQuality = 'excellent';
+    apiModelQualityLabel = 'Отлично';
+  } else if (model === 'ocma') {
+    apiModelQuality = 'good';
+    apiModelQualityLabel = 'Хорошо';
+  } else if (model === 'marginal_ocma') {
+    apiModelQuality = 'limited';
+    apiModelQualityLabel = 'Ограниченно';
+  } else {
+    apiModelQuality = 'unacceptable';
+    apiModelQualityLabel = 'Неприемлемо';
+  }
+
   return {
     model,
     label,
@@ -150,6 +198,12 @@ export function evaluateApiRheology(
     ratio,
     suitabilitySummary,
     recommendation,
+    sodiumSubstitutionDegree,
+    sodiumSubstitutionRating,
+    sodiumSubstitutionLabel,
+    sodiumSubstitutionDescription,
+    apiModelQuality,
+    apiModelQualityLabel,
   };
 }
 
@@ -488,6 +542,45 @@ export function calculateAnalysis(input: BentoniteInputData): AnalysisResults {
       }
     }
 
+    // Build Industry API Summary (API-модель и степень замещения натрия)
+    let apiSummary: IndustryApiSummary | undefined = undefined;
+    if (apiModelResult) {
+      const q = apiModelResult.apiModelQuality;
+      const x = apiModelResult.sodiumSubstitutionDegree ?? 0;
+      const xLabel = apiModelResult.sodiumSubstitutionLabel || 'Не определено';
+      let conclusion = '';
+
+      if (q === 'excellent') {
+        if (apiModelResult.sodiumSubstitutionRating === 'optimal') {
+          conclusion = `API-модель Отлично (${apiModelResult.label}), замещение Na x = ${x} (Оптимально). Тактоидная структура сохранена, открытые галереи для ЧАС — сырье высшей кондиции для ${spec.name}.`;
+        } else if (apiModelResult.sodiumSubstitutionRating === 'acceptable') {
+          conclusion = `API-модель Отлично (${apiModelResult.label}), замещение Na x = ${x} (${xLabel}). Реология в норме, сырье пригодно для ${spec.name}.`;
+        } else {
+          conclusion = `API-модель ${apiModelResult.label}, но степень замещения Na x = ${x} (${xLabel}) — риск распада тактоидов либо недоактивации.`;
+        }
+      } else if (q === 'good') {
+        if (apiModelResult.sodiumSubstitutionRating === 'optimal' || apiModelResult.sodiumSubstitutionRating === 'acceptable') {
+          conclusion = `API-модель Хорошо (OCMA, YP/PV ≤ 6), замещение Na x = ${x} (${xLabel}). Удовлетворяет требованиям для выпуска ОГ под ${spec.name}.`;
+        } else {
+          conclusion = `API-модель Хорошо (OCMA), однако замещение Na x = ${x} (${xLabel}) требует технологической корректировки расхода соды.`;
+        }
+      } else if (q === 'limited') {
+        conclusion = `API-модель Ограниченно (${apiModelResult.label}, YP/PV 6–8), замещение Na x = ${x} (${xLabel}). Пригодно только для среднесортной ОГ (снизьте дозировку соды).`;
+      } else {
+        conclusion = `API-модель Неприемлемо / Нестандартно (${apiModelResult.label}), замещение Na x = ${x} (${xLabel}). Риск распада пакетов до монослоев или недостаточной вязкости.`;
+      }
+
+      apiSummary = {
+        modelLabel: apiModelResult.label,
+        modelQuality: apiModelResult.apiModelQuality || 'unacceptable',
+        modelQualityLabel: apiModelResult.apiModelQualityLabel || 'Неприемлемо',
+        sodiumSubstitutionDegree: apiModelResult.sodiumSubstitutionDegree,
+        sodiumSubstitutionRating: apiModelResult.sodiumSubstitutionRating,
+        sodiumSubstitutionLabel: apiModelResult.sodiumSubstitutionLabel,
+        conclusion,
+      };
+    }
+
     const failCount = reasonsFail.length;
     const isSuitable = colorPass && failCount === 0;
     const isLimited = !isSuitable && failCount >= 1 && failCount <= 2;
@@ -505,6 +598,7 @@ export function calculateAnalysis(input: BentoniteInputData): AnalysisResults {
       failCount,
       reasonsFail,
       reasonsPass,
+      apiSummary,
     };
   });
 
