@@ -209,6 +209,11 @@ export const ColorInput: React.FC<ColorInputProps> = ({
               <p>
                 <strong className="text-stone-700">Среда формирования:</strong> {selectedColor.formationEnvironment}
               </p>
+              {selectedColor.organoSuitabilitySummary && (
+                <p className="bg-amber-50/70 p-1.5 rounded-md border border-amber-200/60 text-amber-900 font-medium text-[11.5px]">
+                  <strong>Органомодификация:</strong> {selectedColor.organoSuitabilitySummary}
+                </p>
+              )}
             </div>
           </div>
 
@@ -218,11 +223,19 @@ export const ColorInput: React.FC<ColorInputProps> = ({
               className={`font-semibold px-2 py-0.5 rounded-md ${
                 selectedColor.ironBehavior === 'structural'
                   ? 'bg-blue-100 text-blue-800'
+                  : selectedColor.ironBehavior === 'structural_siderite'
+                  ? 'bg-slate-200 text-slate-800'
+                  : selectedColor.ironBehavior === 'free_organics_sulfides' || selectedColor.ironBehavior === 'free_organics_manganese'
+                  ? 'bg-stone-200 text-stone-900'
                   : 'bg-amber-100 text-amber-800'
               }`}
             >
               {selectedColor.ironBehavior === 'structural'
                 ? 'Структурное Fe (Fe_балласт = 0)'
+                : selectedColor.ironBehavior === 'structural_siderite'
+                ? 'Силикатное Fe + сидерит'
+                : selectedColor.ironBehavior === 'free_organics_sulfides' || selectedColor.ironBehavior === 'free_organics_manganese'
+                ? 'Органика и сульфиды (FeS₂)'
                 : 'Свободное Fe (балласт гематит/гётит)'}
             </span>
           </div>

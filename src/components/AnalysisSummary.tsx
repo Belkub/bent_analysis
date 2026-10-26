@@ -373,6 +373,11 @@ export const AnalysisSummary: React.FC<AnalysisSummaryProps> = ({
               <strong>Поведение железа:</strong> {colorInfo.ironStatusDescription}
               {impurities.ironTotal > 0 && ` (Всего Fe₂O₃ в РФА: ${impurities.ironTotal}%, структурное: ${impurities.ironStructural}%, свободный балласт: ${impurities.ironBallast}%).`}
             </p>
+            {colorInfo.organoSuitabilitySummary && (
+              <p className="text-[11px] text-amber-950 bg-amber-50/80 p-1.5 rounded-md mt-1 border border-amber-200/60 leading-snug">
+                <strong>Оценка пригодности к ОМ:</strong> {colorInfo.organoSuitabilitySummary}
+              </p>
+            )}
           </div>
         </div>
         <button

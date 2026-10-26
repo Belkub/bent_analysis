@@ -245,26 +245,94 @@ export const ModalApiRole: React.FC<ModalApiRoleProps> = ({
             </div>
           </div>
 
-          {/* 3. Why non-treated and drilling grade are ideal */}
-          <div className="rounded-xl border border-stone-200 p-4 bg-emerald-50/50 space-y-2 border-emerald-200">
-            <h4 className="text-sm font-bold text-emerald-950 flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-emerald-700 text-white text-xs flex items-center justify-center font-bold">
-                3
-              </span>
-              Почему кондиционные глины (non-treated и drilling grade) идеальны для органомодификации?
-            </h4>
-            <div className="p-3 bg-white rounded-lg border border-emerald-200 text-stone-700 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold font-mono text-[11px]">
-                  YP/PV ≤ 1.5 – 3.0 и F₆₀₀ ≥ 30
+          {/* 3. Interpretation of 3 API Models & f600 >= 30 Rule */}
+          <div className="rounded-xl border border-stone-200 p-4 bg-emerald-50/50 space-y-3 border-emerald-200">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-sm font-bold text-emerald-950 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-emerald-700 text-white text-xs flex items-center justify-center font-bold">
+                  3
                 </span>
-                <span className="text-emerald-800 font-semibold text-xs">Оптимальное состояние сырья</span>
-              </div>
-              <p className="text-xs leading-relaxed text-stone-700">
-                Глины категорий <strong>non-treated</strong> и <strong>drilling grade</strong> имеют достаточный уровень гидратации, но главное — их частицы остаются достаточно крупными (<strong>многослойными тактоидами</strong>).
-              </p>
-              <div className="p-2.5 bg-emerald-50 rounded-md border border-emerald-200 text-xs text-emerald-900 font-medium">
-                🛡️ В таких глинах сохраняется развитая система <strong>межслоевых галерей</strong>, в которые молекулы длинноцепочечных ЧАС свободно проникают и формируют плотный, упорядоченный органомодифицированный монослой или бислой.
+                Интерпретация 3 моделей API и их нормативные критерии (F₆₀₀ ≥ 30 для всех 3 моделей)
+              </h4>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 border border-emerald-300 font-mono">
+                ОБЯЗАТЕЛЬНО: F₆₀₀ ≥ 30
+              </span>
+            </div>
+
+            <p className="text-xs text-stone-700 leading-relaxed">
+              Стандарт <strong>API Spec 13A</strong> регламентирует три базовые модели бентонитовых суспензий. <strong>У всех трех моделей ключевой реологический показатель F₆₀₀ (показание вискозиметра при 600 об/мин) строго должен быть не менее 30.</strong> Если F₆₀₀ &lt; 30, глина не соответствует стандарту API ни по одной из трех моделей и требует предварительной содовой доактивации или обогащения.
+            </p>
+
+            {/* Comparison Table of 3 Models */}
+            <div className="overflow-x-auto rounded-lg border border-emerald-200 bg-white">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-emerald-100/70 text-emerald-950 font-bold text-[11px]">
+                  <tr>
+                    <th className="p-2 border-b border-emerald-200">Модель API</th>
+                    <th className="p-2 border-b border-emerald-200 font-mono">Критерий F₆₀₀</th>
+                    <th className="p-2 border-b border-emerald-200 font-mono">Фактор YP / PV</th>
+                    <th className="p-2 border-b border-emerald-200">Оценка для ОМ</th>
+                    <th className="p-2 border-b border-emerald-200">Коллоидное состояние тактоидов</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100 text-[11px]">
+                  <tr className="hover:bg-emerald-50/40">
+                    <td className="p-2 font-bold text-stone-900">
+                      1. Модель 'non-treated'
+                      <span className="block text-[10px] text-stone-500 font-normal">API 13A Section 11</span>
+                    </td>
+                    <td className="p-2 font-mono font-bold text-emerald-700 bg-emerald-50/50">≥ 30</td>
+                    <td className="p-2 font-mono font-bold text-emerald-700">≤ 1.5</td>
+                    <td className="p-2">
+                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold text-[10px]">
+                        Отлично (Наилучшая)
+                      </span>
+                    </td>
+                    <td className="p-2 text-stone-600">
+                      Крупные многослойные тактоиды, свободные открытые галереи для быстрого проникновения ЧАС.
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-blue-50/40">
+                    <td className="p-2 font-bold text-stone-900">
+                      2. Модель 'drilling grade'
+                      <span className="block text-[10px] text-stone-500 font-normal">API 13A Section 9</span>
+                    </td>
+                    <td className="p-2 font-mono font-bold text-emerald-700 bg-emerald-50/50">≥ 30</td>
+                    <td className="p-2 font-mono font-bold text-blue-700">≤ 3.0</td>
+                    <td className="p-2">
+                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 font-bold text-[10px]">
+                        Отлично (Стандарт)
+                      </span>
+                    </td>
+                    <td className="p-2 text-stone-600">
+                      Стандартная буровая кондиция, качественная содовая активация без разрушения кристаллической структуры.
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-amber-50/40">
+                    <td className="p-2 font-bold text-stone-900">
+                      3. Модель 'OCMA'
+                      <span className="block text-[10px] text-stone-500 font-normal">API 13A Section 10</span>
+                    </td>
+                    <td className="p-2 font-mono font-bold text-emerald-700 bg-emerald-50/50">≥ 30</td>
+                    <td className="p-2 font-mono font-bold text-amber-700">≤ 6.0</td>
+                    <td className="p-2">
+                      <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-900 font-bold text-[10px]">
+                        Хорошо (Приемлемо)
+                      </span>
+                    </td>
+                    <td className="p-2 text-stone-600">
+                      Умеренная пептизация пакетов, допустима для серийных ОГ (буровые растворы, базовые смазки).
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Rule Accent */}
+            <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-300 text-xs text-amber-950 flex items-start gap-2">
+              <span className="font-bold text-amber-700 shrink-0 text-sm">⚠️</span>
+              <div>
+                <strong>Критическое правило интерпретации:</strong> если показатель <strong>F₆₀₀ &lt; 30</strong>, исследуемый бентонит <em>не удовлетворяет требованиям ни одной из 3 моделей API</em>. При значениях F₆₀₀ = 18–29 сырье обладает достаточным скрытым потенциалом по YP/PV, однако требует обязательной содовой доактивации (0,3–1,5% Na₂CO₃) для подъема вязкости F₆₀₀ ≥ 30 перед проведением реакции интеркаляции ЧАС.
               </div>
             </div>
           </div>
@@ -391,7 +459,7 @@ export const ModalApiRole: React.FC<ModalApiRoleProps> = ({
             <div className="p-2.5 rounded-lg bg-white border border-amber-300 font-medium text-xs text-stone-800">
               🎯 <strong>Золотой стандарт для успешной органомодификации:</strong> сырье должно строго укладываться в нормативы API:
               <div className="mt-1 flex flex-wrap gap-2 text-xs font-mono font-bold text-stone-900">
-                <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">F₆₀₀ ≥ 30</span>
+                <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">F₆₀₀ ≥ 30 (норма для всех 3 моделей API)</span>
                 <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">YP / PV ≤ 1.5 – 3.0</span>
                 <span className="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">x = YP / F₆₀₀ ∈ [0.30 – 0.60]</span>
               </div>

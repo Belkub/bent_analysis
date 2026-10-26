@@ -400,7 +400,7 @@ export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
                     className="w-full text-xs font-semibold bg-stone-50 border border-stone-300 rounded px-2 py-1 text-right"
                   />
                 </div>
-                <span className="text-[10px] text-stone-400 mt-1 block">об/мин</span>
+                <span className="text-[10px] text-amber-800 font-semibold mt-1 block">об/мин (норма API ≥ 30)</span>
               </div>
 
               {/* API test: ф300 */}
@@ -577,6 +577,15 @@ export const PhysicalParamsInput: React.FC<PhysicalParamsInputProps> = ({
                       </span>
                     </div>
                   </div>
+
+                  {f600Val > 0 && f600Val < 30 && (
+                    <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-900 text-xs flex items-start gap-2">
+                      <span className="font-bold text-red-700 shrink-0">⚠️</span>
+                      <div>
+                        <strong>Показатель ф600 = {f600Val} &lt; 30 ниже нормы API:</strong> у всех трех моделей API (non-treated, drilling grade, OCMA) показатель ф600 должен быть не менее 30. Образец не может быть классифицирован как кондиционная модель API до проведения доактивации содой.
+                      </div>
+                    </div>
+                  )}
 
                   <p className="text-stone-600 text-xs leading-relaxed">
                     {evalRes.description}

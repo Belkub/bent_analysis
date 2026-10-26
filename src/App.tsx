@@ -36,7 +36,7 @@ export default function App() {
   const [isGeneratingOnePagePdf, setIsGeneratingOnePagePdf] = useState<boolean>(false);
 
   // 1. Color State
-  const [selectedColorId, setSelectedColorId] = useState<BentoniteColorId>('yellow_brown');
+  const [selectedColorId, setSelectedColorId] = useState<BentoniteColorId>(BENCHMARK_PRESETS[0].data.colorId);
   const [clayPhotoUrl, setClayPhotoUrl] = useState<string | undefined>(undefined);
 
   // 2. Oxide Composition State (initialized with MT-06 benchmark by default)
@@ -82,7 +82,7 @@ export default function App() {
   // Reset form to blank
   const handleReset = () => {
     setSampleName('');
-    setSelectedColorId('creamy_white');
+    setSelectedColorId('white_light_gray');
     setOxides({});
     setSwellingIndex(undefined);
     setCec(undefined);

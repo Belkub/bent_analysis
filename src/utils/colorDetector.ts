@@ -42,17 +42,25 @@ export function classifyHsvToBentoniteColor(hsv: { h: number; s: number; v: numb
 } {
   const { h, s, v } = hsv;
 
-  // Very dark colors -> Dark gray, earthy, black
+  // Very dark / earthy colors -> Dark brown, earthy, black
   if (v < 0.28) {
-    return { colorId: 'dark_gray_black', confidence: Math.min(96, Math.round((1 - v) * 100)) };
+    return { colorId: 'dark_brown_black', confidence: Math.min(96, Math.round((1 - v) * 100)) };
   }
 
-  // Very low saturation (< 0.14)
-  if (s < 0.15) {
-    if (v >= 0.60) {
+  // Dark brownish / humic earthy tones (warm hue, low-medium saturation, lower brightness)
+  if (h >= 15 && h <= 45 && s >= 0.15 && s <= 0.45 && v < 0.45) {
+    return { colorId: 'dark_brown_black', confidence: 91 };
+  }
+
+  // Low saturation (neutral grayscale axis: white/cream -> grey -> dark brown/black)
+  if (s < 0.18) {
+    if (v >= 0.72) {
       return { colorId: 'white_light_gray', confidence: 92 };
     }
-    return { colorId: 'dark_gray_black', confidence: 85 };
+    if (v >= 0.36) {
+      return { colorId: 'grey', confidence: 94 };
+    }
+    return { colorId: 'dark_brown_black', confidence: 88 };
   }
 
   // Pink, pale lilac
@@ -81,17 +89,20 @@ export function classifyHsvToBentoniteColor(hsv: { h: number; s: number; v: numb
 
   // Blue, bluish-gray, slate
   if (h > 165 && h < 285) {
-    if (s < 0.25) {
-      return { colorId: 'blue_gray', confidence: 84 };
+    if (s < 0.22) {
+      return { colorId: 'grey', confidence: 86 };
     }
     return { colorId: 'blue_gray', confidence: 90 };
   }
 
   // Fallback based on brightness
-  if (v > 0.7) {
+  if (v > 0.72) {
     return { colorId: 'white_light_gray', confidence: 75 };
   }
-  return { colorId: 'dark_gray_black', confidence: 70 };
+  if (v >= 0.38) {
+    return { colorId: 'grey', confidence: 80 };
+  }
+  return { colorId: 'dark_brown_black', confidence: 70 };
 }
 
 export async function detectColorFromImage(

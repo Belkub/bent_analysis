@@ -213,6 +213,11 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
             <div><strong>Категория:</strong> ${colorInfo.name}</div>
             <div style="margin-top: 3px;"><strong>Вероятные примеси:</strong> ${colorInfo.probableImpurities}</div>
             <div style="margin-top: 3px;"><strong>Генезис месторождения:</strong> ${colorInfo.formationEnvironment}</div>
+            ${
+              colorInfo.organoSuitabilitySummary
+                ? `<div style="margin-top: 3px; color: #92400e; background: #fef3c7; padding: 2px 5px; border-radius: 3px; font-size: 9px;"><strong>Пригодность к ОМ:</strong> ${colorInfo.organoSuitabilitySummary}</div>`
+                : ''
+            }
           </div>
         </div>
 
@@ -638,23 +643,25 @@ export async function generateBentonitePdfReport(payload: PdfReportPayload): Pro
               <!-- Viscosity Parameters Row -->
               <div style="display: flex; justify-content: space-between; align-items: center; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 8px; font-size: 9.5px; margin-bottom: 5px;">
                 <div style="font-family: monospace; color: #0f172a;">
-                  PV: <strong>${apiModel.pv} сПз</strong> | YP: <strong>${apiModel.yp} дфунт/100фт²</strong> | YP/PV: <strong style="color: #b45309; font-size: 11px;">${apiModel.ratio}</strong>
+                  F₆₀₀: <strong style="color: ${apiTest.f600 !== undefined && apiTest.f600 >= 30 ? '#047857' : '#b91c1c'};">${apiTest.f600 ?? (apiModel.pv + (apiTest.f300 ?? 0))}</strong> (норма ≥ 30) | F₃₀₀: <strong>${apiTest.f300 ?? '—'}</strong> | PV: <strong>${apiModel.pv} сПз</strong> | YP: <strong>${apiModel.yp} дфунт/100фт²</strong> | YP/PV: <strong style="color: #b45309; font-size: 11px;">${apiModel.ratio}</strong>
                 </div>
                 <div style="font-size: 8.5px; color: #64748b;">
                   ${
-                    apiModel.ratio <= 1.5
-                      ? '🎯 Отлично: Non-treated сорт (YP/PV ≤ 1.5)'
+                    apiTest.f600 !== undefined && apiTest.f600 < 30
+                      ? '⚠️ F₆₀₀ < 30: Не соответствует норме API (требуется ≥ 30)'
+                      : apiModel.ratio <= 1.5
+                      ? '🎯 Отлично: Non-treated сорт (F₆₀₀ ≥ 30, YP/PV ≤ 1.5)'
                       : apiModel.ratio <= 3.0
-                      ? '✓ Отлично: Drilling grade (YP/PV ≤ 3.0)'
+                      ? '✓ Отлично: Drilling grade (F₆₀₀ ≥ 30, YP/PV ≤ 3.0)'
                       : apiModel.ratio <= 6.0
-                      ? '✓ Хорошо: OCMA grade (YP/PV ≤ 6.0)'
+                      ? '✓ Хорошо: OCMA grade (F₆₀₀ ≥ 30, YP/PV ≤ 6.0)'
                       : '⚠️ Ограниченно: Среднесортная ОГ (YP/PV 6.0–8.0)'
                   }
                 </div>
               </div>
 
               <div style="font-size: 8px; color: #475569; line-height: 1.3; background-color: #f1f5f9; padding: 4px 8px; border-radius: 4px;">
-                <strong>Механизм органомодификации:</strong> При YP/PV ≤ 3.0 и x = 0,3–0,6 глинистые частицы находятся в виде многослойных тактоидов с открытыми галереями. Рост YP/PV &gt; 6 сигнализирует о деструкции (Сценарий А: содовая пептизация до монослоев; Сценарий Б: компенсация зарядом силанолов при высоком pH; Сценарий В: сжатие ДЭС электролитами).
+                <strong>Критерии стандарта API:</strong> У всех 3 моделей API (non-treated, drilling grade, OCMA) показатель F₆₀₀ обязан быть не менее 30. При F₆₀₀ ≥ 30, YP/PV ≤ 3.0 и x = 0,3–0,6 частицы находятся в виде многослойных тактоидов с открытыми галереями для закрепления ЧАС. При F₆₀₀ &lt; 30 глина не проходит сертификацию API и требует содовой активации. Рост YP/PV &gt; 6 сигнализирует о деструкции (Сценарий А: содовая пептизация до монослоев; Сценарий Б: компенсация зарядом силанолов при высоком pH; Сценарий В: сжатие ДЭС электролитами).
               </div>
             `
             : `
@@ -1115,25 +1122,29 @@ export async function generateBentoniteOnePagePdfReport(payload: PdfReportPayloa
                 : ''
             }
           </div>
-          <div style="display: flex; align-items: baseline; gap: 5px; margin-top: 1px;">
+          <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 1px;">
+            <div>
+              <span style="font-size: 7px; color: #64748b;">F₆₀₀:</span>
+              <span style="font-size: 9.5px; font-weight: 800; color: ${apiTest.f600 !== undefined && apiTest.f600 >= 30 ? '#047857' : '#b91c1c'};">${apiTest.f600 ?? '—'}</span>
+            </div>
             <div>
               <span style="font-size: 7px; color: #64748b;">PV:</span>
-              <span style="font-size: 10.5px; font-weight: 800; color: #0f172a;">${apiModel?.pv !== undefined ? `${apiModel.pv}` : '—'}</span>
+              <span style="font-size: 9.5px; font-weight: 800; color: #0f172a;">${apiModel?.pv !== undefined ? `${apiModel.pv}` : '—'}</span>
             </div>
             <div>
               <span style="font-size: 7px; color: #64748b;">YP:</span>
-              <span style="font-size: 10.5px; font-weight: 800; color: #0f172a;">${apiModel?.yp !== undefined ? `${apiModel.yp}` : '—'}</span>
+              <span style="font-size: 9.5px; font-weight: 800; color: #0f172a;">${apiModel?.yp !== undefined ? `${apiModel.yp}` : '—'}</span>
             </div>
             <div>
               <span style="font-size: 7px; color: #64748b;">YP/PV:</span>
-              <span style="font-size: 10.5px; font-weight: 800; color: #b45309;">${apiModel?.ratio !== undefined ? `${apiModel.ratio}` : '—'}</span>
+              <span style="font-size: 9.5px; font-weight: 800; color: #b45309;">${apiModel?.ratio !== undefined ? `${apiModel.ratio}` : '—'}</span>
             </div>
           </div>
           <div style="font-size: 7px; color: #475569; margin-top: 1px; line-height: 1.2;">
             ${
               apiModel?.sodiumSubstitutionDegree !== undefined
-                ? `x(Na) = <strong>${apiModel.sodiumSubstitutionDegree}</strong> (${apiModel.sodiumSubstitutionLabel.split(' ')[0]})`
-                : (apiTest.f600 !== undefined ? `ф600: ${apiTest.f600}, ф300: ${apiTest.f300}` : 'Естественная реология')
+                ? `x(Na) = <strong>${apiModel.sodiumSubstitutionDegree}</strong> • ${apiModel.label.split(' (')[0]} (норма F₆₀₀ ≥ 30)`
+                : (apiTest.f600 !== undefined ? `ф600: ${apiTest.f600} (норма ≥ 30), ф300: ${apiTest.f300}` : 'Естественная реология')
             }
           </div>
         </div>
@@ -1188,12 +1199,26 @@ export async function generateBentoniteOnePagePdfReport(payload: PdfReportPayloa
               <strong style="font-size: 8.5px; text-transform: uppercase; color: #1e293b; letter-spacing: 0.5px;">
                 Цвет и хромофоры железа
               </strong>
-              <span style="font-size: 7.5px; color: ${selectedColor.id === 'white_light_gray' ? '#15803d' : '#b45309'}; font-weight: 800;">
-                ${selectedColor.id === 'white_light_gray' ? '✓ Светлый базовый' : 'Окрашенный'}
+              <span style="font-size: 7.5px; color: ${
+                selectedColor.id === 'white_light_gray'
+                  ? '#15803d'
+                  : selectedColor.id === 'grey'
+                  ? '#475569'
+                  : '#b45309'
+              }; font-weight: 800;">
+                ${
+                  selectedColor.id === 'white_light_gray'
+                    ? '✓ Светлый базовый'
+                    : selectedColor.id === 'grey'
+                    ? '✓ Серый (силикатное Fe)'
+                    : selectedColor.id === 'dark_brown_black' || selectedColor.id === 'dark_gray_black'
+                    ? 'Темно-коричневый / гуматы'
+                    : 'Окрашенный'
+                }
               </span>
             </div>
             <div style="font-size: 8px; color: #475569; line-height: 1.3;">
-              Fe₂O₃ общ: <strong>${(oxides.Fe2O3 || 0).toFixed(2)}%</strong> • Структурное Fe: <strong>${impurities.ironStructural.toFixed(2)}%</strong> • Fe-балласт: <strong>${impurities.ironFree.toFixed(2)}%</strong>
+              Цвет: <strong>${selectedColor.shortName}</strong> • Fe₂O₃: <strong>${(oxides.Fe2O3 || 0).toFixed(2)}%</strong> (структ. ${impurities.ironStructural.toFixed(2)}%, балласт ${impurities.ironFree.toFixed(2)}%)
             </div>
           </div>
 

@@ -5,12 +5,14 @@
 
 export type BentoniteColorId =
   | 'white_light_gray'
+  | 'grey'
   | 'yellow_ochre'
   | 'red_terracotta'
   | 'green_olive'
   | 'blue_gray'
-  | 'dark_gray_black'
-  | 'pink_lilac';
+  | 'dark_brown_black'
+  | 'pink_lilac'
+  | 'dark_gray_black'; // Compatibility alias for dark_brown_black
 
 export interface BentoniteColorInfo {
   id: BentoniteColorId;
@@ -19,8 +21,19 @@ export interface BentoniteColorInfo {
   sampleHex: string;
   probableImpurities: string;
   formationEnvironment: string;
-  ironBehavior: 'none' | 'structural' | 'free_oxyhydroxides' | 'free_hematite' | 'free_sulfides' | 'free_organics_manganese' | 'manganese_traces';
+  ironBehavior:
+    | 'none'
+    | 'structural'
+    | 'structural_siderite'
+    | 'free_oxyhydroxides'
+    | 'free_hematite'
+    | 'free_sulfides'
+    | 'free_organics_manganese'
+    | 'free_organics_sulfides'
+    | 'manganese_traces';
   ironStatusDescription: string;
+  organoSuitabilitySummary?: string;
+  gelColorDescription?: string;
 }
 
 export type OxideKey =

@@ -16,27 +16,28 @@ import { BENTONITE_COLORS, INDUSTRY_SPECS, CEC_SMECTITE_MATRIX } from '../data/m
 
 /**
  * Оценка реологии бентонита по API-тесту и пригодности для органомодификации (ОМ).
- * Реологические критерии стандарта API и механизмы поведения бентонитовых суспензий:
- * 1. Базовые переделы YP/PV:
- *    - YP/PV <= 1.5: 'non-treated' (наилучшая для ОМ, сохранение тактоидов с межслоевыми галереями)
- *    - YP/PV <= 3.0: 'drilling grade' (хорошая для ОМ)
- *    - YP/PV <= 6.0: 'OCMA' (приемлемая для ОМ)
- *    - YP/PV 6.0 .. 8.0: ограниченно пригоден для ОМ при получении среднесортной ОГ.
- *                        Если глина активирована, то рекомендуется снизить вложение соды.
- * 2. Сглаженная оценка при ф600 от 18 до 29 (или YP/PV 18..29):
- *    - Вывод о степени пригодности бентонита для ОМ сохраняется (считывается по переделам отношения YP/PV),
- *      но добавляется фраза о рекомендации активации содой 0,3 - 1,5 % для увеличения показателя ф600 выше 30.
- * 3. Если ф600 < 18:
- *    - Нестандартная марка (недостаточная вязкость суспензии).
- * 4. Степень замещения на натрий по данным API-теста x = YP / F600:
- *    - Хороший уровень (Оптимально): 0,3 - 0,6
- *    - Приемлемый уровень: 0,2 - 0,3 и 0,6 - 0,75
- *    - Неприемлемый уровень: выше 0,75 (риск монослойной пептизации / распада тактоидов) и ниже 0,2 (недоактивация)
- * 5. Классификация API-модели для отраслевых отчетов:
- *    - "Отлично" при non-treated или drilling grade (YP/PV <= 3.0)
- *    - "Хорошо" при OCMA (YP/PV <= 6.0)
- *    - "Ограниченно" при marginal_ocma (YP/PV 6.0–8.0)
- *    - "Неприемлемо / Нестандартно" при non_standard
+ * Реологические критерии стандарта API Spec 13A и механизмы поведения бентонитовых суспензий:
+ * 
+ * ОБЯЗАТЕЛЬНЫЙ КРИТЕРИЙ: У ВСЕХ 3 МОДЕЛЕЙ API ПОКАЗАТЕЛЬ ф600 ДОЛЖЕН БЫТЬ НЕ МЕНЕЕ 30 (F₆₀₀ ≥ 30)!
+ * 1. Модели при F₆₀₀ ≥ 30 (классификация по структурному фактору YP/PV):
+ *    - YP/PV <= 1.5: модель 'non-treated' (API 13A Section 11, наилучшая для ОМ, сохранение тактоидов с межслоевыми галереями)
+ *    - YP/PV <= 3.0: модель 'drilling grade' (API 13A Section 9, хорошая для ОМ, стандартная буровая кондиция)
+ *    - YP/PV <= 6.0: модель 'ocma' (API 13A Section 10, приемлемая для ОМ, умеренная пептизация)
+ *    - YP/PV 6.0 .. 8.0: 'marginal_ocma' — ограниченно пригоден для ОМ при получении среднесортной ОГ (снизить вложение соды)
+ *    - YP/PV > 8.0: 'non_standard' — избыточный тиксотропный сдвиг, деструкция структуры (сценарии А/Б/В)
+ * 2. Оценка при F₆₀₀ < 30:
+ *    - Ни одна из 3 моделей API не выполняется (норма F₆₀₀ ≥ 30 для всех 3 моделей).
+ *    - При ф600 от 18 до 29: классифицируется как не соответствующий API (требует активации содой 0,3–1,5% для подъема ф600 ≥ 30).
+ *    - При ф600 < 18: нестандартная марка (критически недостаточная вязкость суспензии).
+ * 3. Степень замещения на натрий по данным API-теста x = YP / F600:
+ *    - Хороший уровень (Оптимально): 0,30 - 0,60
+ *    - Приемлемый уровень: 0,20 - 0,30 и 0,60 - 0,75
+ *    - Неприемлемый уровень: выше 0,75 (риск монослойной пептизации / распада тактоидов) и ниже 0,20 (недоактивация)
+ * 4. Классификация API-модели для отраслевых отчетов:
+ *    - "Отлично" при non-treated или drilling grade (ф600 ≥ 30, YP/PV <= 3.0)
+ *    - "Хорошо" при OCMA (ф600 ≥ 30, YP/PV <= 6.0)
+ *    - "Ограниченно" при marginal_ocma (ф600 ≥ 30, YP/PV 6.0–8.0) либо ф600 18–29
+ *    - "Неприемлемо" при non_standard (ф600 < 18 или YP/PV > 8.0)
  */
 export function evaluateApiRheology(
   f600: number,
@@ -78,8 +79,7 @@ export function evaluateApiRheology(
         : 'Недостаточная активация (x < 0,20): преобладают нераскрытые плотные кальциевые агрегаты с низкой гидрофильной раздвижкой.';
   }
 
-  // Проверка условия ф600 от 18 до 29 (либо ratio 18..29)
-  const isNearTargetF600 = (f600 >= 18 && f600 < 30) || (ratio >= 18 && ratio <= 29);
+  // ОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ: У ВСЕХ 3 МОДЕЛЕЙ API ПОКАЗАТЕЛЬ ф600 ДОЛЖЕН БЫТЬ НЕ МЕНЕЕ 30
   const isOptimalF600 = f600 >= 30;
 
   let model: ApiModel = 'non_standard';
@@ -87,106 +87,79 @@ export function evaluateApiRheology(
   let suitabilitySummary = 'Нестандартная реология';
   let recommendation: string | undefined = undefined;
   let description = '';
+  let apiModelQuality: ApiModelQuality = 'unacceptable';
+  let apiModelQualityLabel = 'Неприемлемо (ф600 < 30)';
 
   if (isOptimalF600) {
-    // ф600 >= 30 (стандарт API)
+    // ф600 >= 30: выполняется базовый норматив вискозиметра для всех 3 моделей API
     if (ratio <= 1.5) {
       model = 'non_treated';
-      label = "Модель 'non-treated'";
+      label = "Модель 'non-treated' (API 13A Sec 11)";
       suitabilitySummary = 'Наилучшая для органомодификации (ОМ)';
-      description =
-        'Наилучшая для органомодификации (ОМ): равномерный выход вязкости, частицы остаются многослойными тактоидами с открытыми галереями для ЧАС.';
+      description = `Соответствует модели non-treated (ф600 = ${f600} ≥ 30, YP/PV = ${ratio} ≤ 1.5): равномерный выход вязкости, частицы остаются многослойными тактоидами с открытыми галереями для свободного проникновения ЧАС.`;
+      apiModelQuality = 'excellent';
+      apiModelQualityLabel = 'Отлично';
     } else if (ratio <= 3.0) {
       model = 'drilling_grade';
-      label = "Модель 'drilling grade'";
+      label = "Модель 'drilling grade' (API 13A Sec 9)";
       suitabilitySummary = 'Хорошая для органомодификации (ОМ)';
-      description =
-        'Хорошая для органомодификации (ОМ): стандартная буровая марка с качественной содовой активацией и сохранными тактоидами.';
+      description = `Соответствует модели drilling grade (ф600 = ${f600} ≥ 30, YP/PV = ${ratio} ≤ 3.0): кондиционная буровая марка со сбалансированной содовой активацией и сохранными тактоидами.`;
+      apiModelQuality = 'excellent';
+      apiModelQualityLabel = 'Отлично';
     } else if (ratio <= 6.0) {
       model = 'ocma';
-      label = "Модель 'OCMA'";
+      label = "Модель 'OCMA' (API 13A Sec 10)";
       suitabilitySummary = 'Приемлемая для органомодификации (ОМ)';
-      description =
-        'Приемлемая для органомодификации (ОМ): допустимый диапазон, умеренная пептизация пакетов.';
-    } else if (ratio <= 8.0) {
-      // ratio в интервале 6 - 8
-      model = 'marginal_ocma';
-      label = 'Ограниченно пригодная марка (YP/PV 6–8)';
-      suitabilitySummary = 'Ограниченно пригоден для ОМ (среднесортная ОГ)';
-      recommendation = 'Если глина активирована, то рекомендуется снизить вложение соды во избежание монослойного распада.';
-      description =
-        'Бентонит ограниченно пригоден для ОМ при получении среднесортной ОГ. Если глина активирована, то рекомендуется снизить вложение соды.';
-    } else if (ratio >= 18 && ratio <= 29) {
-      model = 'ocma';
-      label = "Модель 'OCMA' (соотношение 18–29)";
-      suitabilitySummary = 'Приемлемая степень пригодности для ОМ сохраняется';
-      recommendation = 'Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.';
-      description =
-        'Степень пригодности для ОМ сохраняется по переделам YP/PV. Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.';
-    } else {
-      model = 'non_standard';
-      label = 'Нестандартная марка (YP/PV > 8)';
-      suitabilitySummary = 'Не соответствует стандартам ОМ';
-      description = `Показатели API не соответствуют стандартам ОМ: избыточный тиксотропный сдвиг (YP/PV = ${ratio} > 8). Высок риск разрушения тактоидов до монослоев.`;
-    }
-  } else if (isNearTargetF600) {
-    // ф600 от 18 до 29: степень пригодности сохраняется по YP/PV + рекомендация активации содой 0,3 - 1,5%
-    recommendation = 'Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.';
-
-    if (ratio <= 1.5) {
-      model = 'non_treated';
-      label = "Модель 'non-treated' (ф600 18–29)";
-      suitabilitySummary = 'Наилучшая пригодность для ОМ (требует доактивации)';
-      description = `Наилучшая для органомодификации (ОМ): равномерный выход вязкости (YP/PV = ${ratio} ≤ 1.5). Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.`;
-    } else if (ratio <= 3.0) {
-      model = 'drilling_grade';
-      label = "Модель 'drilling grade' (ф600 18–29)";
-      suitabilitySummary = 'Хорошая пригодность для ОМ (требует доактивации)';
-      description = `Хорошая для органомодификации (ОМ): стандартная буровая марка (YP/PV = ${ratio} ≤ 3.0). Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.`;
-    } else if (ratio <= 6.0) {
-      model = 'ocma';
-      label = "Модель 'OCMA' (ф600 18–29)";
-      suitabilitySummary = 'Приемлемая пригодность для ОМ (требует доактивации)';
-      description = `Приемлемая для органомодификации (ОМ): допустимый диапазон реологии (YP/PV = ${ratio} ≤ 6.0). Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.`;
+      description = `Соответствует модели OCMA (ф600 = ${f600} ≥ 30, YP/PV = ${ratio} ≤ 6.0): допустимый диапазон реологии, умеренная пептизация пакетов, пригодна для серийных сортов ОГ.`;
+      apiModelQuality = 'good';
+      apiModelQualityLabel = 'Хорошо';
     } else if (ratio <= 8.0) {
       model = 'marginal_ocma';
-      label = 'Ограниченно пригодная марка (ф600 18–29, YP/PV 6–8)';
+      label = 'Ограниченно пригодная марка (ф600 ≥ 30, YP/PV 6–8)';
       suitabilitySummary = 'Ограниченно пригоден для ОМ (среднесортная ОГ)';
       recommendation =
-        'Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30 (если глина активирована, снизить вложение соды).';
-      description =
-        'Бентонит ограниченно пригоден для ОМ при получении среднесортной ОГ. Рекомендуется активация содой 0,3–1,5% для увеличения показателя ф600 выше 30.';
+        'Если глина активирована, рекомендуется снизить вложение соды во избежание монослойного распада тактоидов.';
+      description = `Показатель ф600 = ${f600} ≥ 30 в норме, однако повышенный тиксотропный сдвиг (YP/PV = ${ratio} ∈ 6–8) свидетельствует о начальной деструкции тактоидов. Пригодно для среднесортной ОГ.`;
+      apiModelQuality = 'limited';
+      apiModelQualityLabel = 'Ограниченно';
     } else {
       model = 'non_standard';
-      label = 'Нестандартная марка';
-      suitabilitySummary = 'Не соответствует стандартам ОМ';
-      description = `Показатели API не соответствуют стандартам ОМ: ф600 < 30 и избыточный тиксотропный сдвиг (YP/PV = ${ratio} > 8).`;
+      label = `Нестандартная марка (ф600 = ${f600} ≥ 30, YP/PV = ${ratio} > 8)`;
+      suitabilitySummary = 'Не соответствует стандартам ОМ (деструкция тактоидов)';
+      recommendation =
+        'Критический избыток соды или электролитное загрязнение. Рекомендуется снизить дозировку соды во избежание разрушения межслоевых галерей.';
+      description = `Показатели API не соответствуют стандартам ОМ: критический тиксотропный сдвиг (YP/PV = ${ratio} > 8). Высок риск разрушения тактоидов до монослоев (сценарии деструкции А/Б/В), ЧАС закрепляться негде.`;
+      apiModelQuality = 'unacceptable';
+      apiModelQualityLabel = 'Неприемлемо';
     }
+  } else if (f600 >= 18 && f600 < 30) {
+    // ф600 от 18 до 29: НЕ удовлетворяет нормативу ни одной из 3 моделей API (норма ф600 >= 30)
+    model = 'non_standard';
+    label = `Не соответствует API: ф600 < 30 (текущий: ${f600})`;
+    suitabilitySummary = 'Требует активации до ф600 ≥ 30';
+    recommendation =
+      'У всех 3 моделей API (non-treated, drilling grade, OCMA) норма ф600 составляет не менее 30. Рекомендуется содовая активация 0,3–1,5% для увеличения ф600 выше 30.';
+    description = `Показатель ф600 = ${f600} ниже обязательного норматива стандарта API (у всех трех моделей норма ф600 ≥ 30). Потенциал по структурному фактору YP/PV = ${ratio}: ${
+      ratio <= 1.5
+        ? 'высокий (соответствует non-treated при ф600 ≥ 30)'
+        : ratio <= 3.0
+        ? 'хороший (соответствует drilling grade при ф600 ≥ 30)'
+        : ratio <= 6.0
+        ? 'умеренный (соответствует OCMA при ф600 ≥ 30)'
+        : 'риск деструкции (YP/PV > 6)'
+    }. Необходима содовая доактивация сырья для достижения порога ф600 ≥ 30.`;
+    apiModelQuality = 'limited';
+    apiModelQualityLabel = 'Ограниченно (ф600 < 30)';
   } else {
     // ф600 < 18
     model = 'non_standard';
-    label = 'Нестандартная марка (ф600 < 18)';
-    suitabilitySummary = 'Недостаточная вязкость';
-    recommendation = 'Требуется предварительная активация содой или обогащение сырья.';
-    description = `Показатели API ниже допустимых порогов (ф600 = ${f600} < 18, недостаточная вязкость суспензии). Рекомендуется активация содой или проверка содержания смектита.`;
-  }
-
-  // API model quality rating for industry reports
-  let apiModelQuality: ApiModelQuality = 'unacceptable';
-  let apiModelQualityLabel = 'Неприемлемо / Нестандартно';
-
-  if (model === 'non_treated' || model === 'drilling_grade') {
-    apiModelQuality = 'excellent';
-    apiModelQualityLabel = 'Отлично';
-  } else if (model === 'ocma') {
-    apiModelQuality = 'good';
-    apiModelQualityLabel = 'Хорошо';
-  } else if (model === 'marginal_ocma') {
-    apiModelQuality = 'limited';
-    apiModelQualityLabel = 'Ограниченно';
-  } else {
+    label = `Нестандартная марка (ф600 = ${f600} < 18)`;
+    suitabilitySummary = 'Недостаточная вязкость (ф600 < 30)';
+    recommendation =
+      `Критически низкая вязкость суспензии (ф600 = ${f600} при норме ≥ 30 для всех 3 моделей API). Требуется интенсивная содовая активация или предварительное обогащение сырья.`;
+    description = `Показатели API существенно ниже допустимого норматива: ф600 = ${f600} (у всех трех моделей норма ф600 ≥ 30). Недостаточный коллоидный выход вязкости суспензии.`;
     apiModelQuality = 'unacceptable';
-    apiModelQualityLabel = 'Неприемлемо';
+    apiModelQualityLabel = 'Неприемлемо (ф600 < 30)';
   }
 
   return {
@@ -297,8 +270,19 @@ export function calculateAnalysis(input: BentoniteInputData): AnalysisResults {
     ironBallast = 0;
     ironStructural = fe2o3;
     ironFree = 0;
+  } else if (colorId === 'grey') {
+    // Grey bentonite: iron is predominantly structural in smectite lattice (Fe2+/Fe3+) and authigenic micro-siderite (FeCO3)
+    // Non-abrasive, structural allowance up to 3.0% Fe2O3
+    ironBallast = Math.max(0, fe2o3 - 3.0);
+    ironStructural = Math.min(fe2o3, 3.0);
+    ironFree = ironBallast;
+  } else if (colorId === 'dark_brown_black' || colorId === 'dark_gray_black') {
+    // Dark brown / black: organic matter complexes, pyritic sulfides, manganese
+    ironBallast = Math.max(0, fe2o3 - 2.0);
+    ironStructural = Math.min(fe2o3, 2.0);
+    ironFree = ironBallast;
   } else {
-    // Free iron: yellow (goethite), red (hematite), blue (pyrite), black/pink
+    // Free iron: yellow (goethite), red (hematite), blue (pyrite), pink
     ironBallast = Math.max(0, fe2o3 - 2.0);
     ironStructural = Math.min(fe2o3, 2.0);
     ironFree = ironBallast;
@@ -451,48 +435,60 @@ export function calculateAnalysis(input: BentoniteInputData): AnalysisResults {
 
     // Check Color
     let colorPass = false;
+    const isDarkBrownBlack = colorId === 'dark_brown_black' || colorId === 'dark_gray_black';
+
     if (spec.subIndustryId === 'drilling_standard' || spec.subIndustryId === 'grease_coarse' || spec.subIndustryId === 'mastics_bitumen') {
       colorPass = true;
-      reasonsPass.push('Цвет сырья: допускается любой природный оттенок');
+      if (spec.subIndustryId === 'mastics_bitumen' && isDarkBrownBlack) {
+        reasonsPass.push('Цвет сырья: гуминовые соединения темно-коричневой/черной глины совместимы с битумом и пластифицируют его');
+      } else {
+        reasonsPass.push(`Цвет сырья (${colorInfo.shortName}): допускается любой природный оттенок`);
+      }
     } else if (spec.subIndustryId === 'coatings_premium') {
       if (colorId === 'white_light_gray') {
         colorPass = true;
-        reasonsPass.push('Цвет сырья: идеально белый/светло-серый (без хромофоров)');
+        reasonsPass.push('Цвет сырья: идеально белый / кремовый (без хромофоров)');
+      } else if (colorId === 'grey') {
+        colorPass = false;
+        reasonsFail.push('Цвет: для премиальных прозрачных лаков и белоснежных эмалей требуется белый сырец без хромофоров (серый цвет дает дымчатый оттенок)');
       } else {
         colorPass = false;
-        reasonsFail.push(`Цвет: требуется строго белый или светло-серый (текущий цвет: ${colorInfo.shortName})`);
+        reasonsFail.push(`Цвет: требуется строго белый или кремовый (текущий цвет: ${colorInfo.shortName})`);
       }
     } else if (spec.subIndustryId === 'coatings_basic') {
-      if (colorId === 'white_light_gray' || colorId === 'green_olive' || colorId === 'yellow_ochre') {
+      if (colorId === 'white_light_gray' || colorId === 'grey' || colorId === 'green_olive' || colorId === 'yellow_ochre') {
         colorPass = true;
-        reasonsPass.push(`Цвет сырья (${colorInfo.shortName}) допустим для базовых ЛКМ`);
+        reasonsPass.push(`Цвет сырья (${colorInfo.shortName}) допустим для грунтовок, шпатлевок и эмалей`);
       } else {
         colorPass = false;
-        reasonsFail.push(`Красные и черные глины искажают колористику светлых эмалей`);
+        reasonsFail.push('Красные и темно-коричневые/черные глины искажают колористику светлых эмалей');
       }
     } else if (spec.subIndustryId === 'liquid_rubber_glues') {
-      if (colorId === 'white_light_gray' || colorId === 'green_olive' || colorId === 'yellow_ochre' || colorId === 'red_terracotta') {
+      if (colorId === 'white_light_gray' || colorId === 'grey' || colorId === 'green_olive' || colorId === 'yellow_ochre' || colorId === 'red_terracotta') {
         colorPass = true;
-        reasonsPass.push(`Цвет допустим (отсутствуют ингибирующие полимеризацию сульфиды)`);
+        reasonsPass.push('Цвет допустим (отсутствуют ингибирующие полимеризацию сульфиды и свободные гуматы)');
       } else {
         colorPass = false;
-        reasonsFail.push(`Черные и синие глины вступают в побочные реакции с полимерами из-за сульфидов и органики`);
+        reasonsFail.push('Темно-коричневые/черные и синие глины вступают в побочные реакции с полимерами из-за сульфидов и гуминовых кислот');
       }
     } else if (spec.subIndustryId === 'grease_precision') {
-      if (colorId === 'white_light_gray' || colorId === 'green_olive') {
+      if (colorId === 'white_light_gray' || colorId === 'grey' || colorId === 'green_olive') {
         colorPass = true;
-        reasonsPass.push(`Цвет сырья чистый, исключены абразивные гематит и гётит`);
+        reasonsPass.push(`Цвет сырья (${colorInfo.shortName}): исключены абразивные гематит, гётит и пирит`);
       } else {
         colorPass = false;
-        reasonsFail.push(`Красные и желтые глины строго запрещены из-за абразивного гематита и гётита`);
+        reasonsFail.push('Красные, желтые и темно-коричневые/черные глины строго запрещены из-за абразивных минералов (гематит, гётит, пирит)');
       }
     } else if (spec.subIndustryId === 'drilling_deep_hthp') {
-      if (colorId === 'white_light_gray' || colorId === 'green_olive') {
+      if (colorId === 'white_light_gray' || colorId === 'grey' || colorId === 'green_olive') {
         colorPass = true;
-        reasonsPass.push(`Цвет сырья исключает свободные оксиды железа (термостабильность >150°C)`);
+        reasonsPass.push(`Цвет сырья (${colorInfo.shortName}): исключены термолабильные свободные оксигидроксиды Fe и гуматы (термостабильность >150°C)`);
+      } else if (isDarkBrownBlack) {
+        colorPass = false;
+        reasonsFail.push('Темно-коричневые и черные глины исключаются: гуматы и сульфиды подвержены термодеструкции при >150°C');
       } else {
         colorPass = false;
-        reasonsFail.push(`Желтые и красные глины исключаются: свободное железо катализирует термодеградацию ПАВ >150°C`);
+        reasonsFail.push('Желтые и красные глины исключаются: свободные оксиды железа катализируют термодеградацию ПАВ >150°C');
       }
     }
 
@@ -565,9 +561,13 @@ export function calculateAnalysis(input: BentoniteInputData): AnalysisResults {
           conclusion = `API-модель Хорошо (OCMA), однако замещение Na x = ${x} (${xLabel}) требует технологической корректировки расхода соды.`;
         }
       } else if (q === 'limited') {
-        conclusion = `API-модель Ограниченно (${apiModelResult.label}, YP/PV 6–8), замещение Na x = ${x} (${xLabel}). Пригодно только для среднесортной ОГ (снизьте дозировку соды).`;
+        if (apiModelResult.label.includes('ф600 < 30')) {
+          conclusion = `API-модель Ограниченно (${apiModelResult.label}), замещение Na x = ${x} (${xLabel}). Показатель ф600 ниже обязательного порога (норма ф600 ≥ 30 для всех 3 моделей API). Требуется содовая активация для вывода ф600 ≥ 30.`;
+        } else {
+          conclusion = `API-модель Ограниченно (${apiModelResult.label}, YP/PV 6–8), замещение Na x = ${x} (${xLabel}). Повышенная тиксотропия, пригодно для среднесортной ОГ (снизьте дозировку соды).`;
+        }
       } else {
-        conclusion = `API-модель Неприемлемо / Нестандартно (${apiModelResult.label}), замещение Na x = ${x} (${xLabel}). Риск распада пакетов до монослоев или недостаточной вязкости.`;
+        conclusion = `API-модель Неприемлемо (${apiModelResult.label}), замещение Na x = ${x} (${xLabel}). Не соответствует обязательным критериям стандарта API (ф600 ≥ 30 для всех 3 моделей) либо критическая деструкция тактоидов.`;
       }
 
       apiSummary = {

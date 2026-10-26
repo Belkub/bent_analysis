@@ -61,13 +61,16 @@ export const ModalColorInterpretation: React.FC<ModalColorInterpretationProps> =
                 <tr>
                   <th className="px-3.5 py-2.5">Цвет комового бентонита</th>
                   <th className="px-3.5 py-2.5">Вероятные химические примеси и фазы</th>
-                  <th className="px-3.5 py-2.5">Среда формирования и свойства</th>
+                  <th className="px-3.5 py-2.5">Среда формирования и генезис</th>
+                  <th className="px-3.5 py-2.5">Пригодность к ОМ и цвет геля</th>
                   <th className="px-3.5 py-2.5 text-center">Статус Fe</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200 bg-white">
                 {BENTONITE_COLORS.map((c) => {
                   const isCurrent = c.id === selectedColorId;
+                  const isStructural =
+                    c.ironBehavior === 'structural' || c.ironBehavior === 'structural_siderite';
                   return (
                     <tr
                       key={c.id}
@@ -97,15 +100,29 @@ export const ModalColorInterpretation: React.FC<ModalColorInterpretationProps> =
                       <td className="px-3.5 py-3 align-top text-stone-600 leading-snug">
                         {c.formationEnvironment}
                       </td>
+                      <td className="px-3.5 py-3 align-top text-stone-600 leading-snug">
+                        <div className="font-medium text-stone-800">{c.organoSuitabilitySummary}</div>
+                        {c.gelColorDescription && (
+                          <div className="text-[11px] text-stone-500 mt-0.5 italic">
+                            Гель: {c.gelColorDescription}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-3.5 py-3 align-top text-center whitespace-nowrap">
                         <span
                           className={`inline-block px-2 py-0.5 rounded-sm text-[10px] font-bold ${
-                            c.ironBehavior === 'structural'
+                            isStructural
                               ? 'bg-blue-100 text-blue-800'
+                              : c.ironBehavior === 'free_organics_sulfides' || c.ironBehavior === 'free_organics_manganese'
+                              ? 'bg-stone-200 text-stone-800'
                               : 'bg-amber-100 text-amber-800'
                           }`}
                         >
-                          {c.ironBehavior === 'structural' ? 'Структурное' : 'Свободный балласт'}
+                          {isStructural
+                            ? 'Структурное'
+                            : c.ironBehavior === 'free_organics_sulfides' || c.ironBehavior === 'free_organics_manganese'
+                            ? 'Органика / Пирит'
+                            : 'Свободный балласт'}
                         </span>
                       </td>
                     </tr>
@@ -115,25 +132,45 @@ export const ModalColorInterpretation: React.FC<ModalColorInterpretationProps> =
             </table>
           </div>
 
-          {/* Deep Dive: Structural vs Free Iron */}
+          {/* Deep Dive: 4 Geochemical Behavior Classes */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200 space-y-2">
-              <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
-                <ShieldAlert className="w-4 h-4 text-amber-700" />
-                1. Свободные примеси (желтые, красные, синие глины)
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                <Sparkles className="w-4 h-4 text-slate-700" />
+                1. Серый и белый бентонит (чистота и стабильность)
               </div>
               <p className="text-stone-600 leading-relaxed text-xs">
-                Оксиды и сульфиды железа существуют как отдельные микро- и наночастицы (гётит, гематит, пирит). Они выступают жестким балластом, забивают межпакетные поры между тактоидами глины, мешают проникновению молекул ЧАС при органомодификации и могут катализировать термическую деградацию ПАВ при забойных температурах выше 150°C.
+                В <strong>сером бентоните</strong> железо находится в умеренно-восстановленной форме (силикатное Fe²⁺/Fe³⁺ в октаэдрах смектита и микросидерит FeCO₃), свободные оксигидроксиды (гётит) отсутствуют. Поэтому серый бентонит дает однородные светлые дымчато-серые гели без желтизны и не катализирует термический распад ЧАС при температурах выше 150°C, являясь превосходной основой для глубоководного бурения HT-HP, клеев и серых грунтовок.
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 space-y-2">
               <div className="flex items-center gap-2 text-blue-900 font-bold text-sm">
                 <Sparkles className="w-4 h-4 text-blue-700" />
-                2. Структурные примеси (зеленые глины)
+                2. Зеленый бентонит (структурное Fe²⁺)
               </div>
               <p className="text-stone-600 leading-relaxed text-xs">
-                Ионы Fe²⁺ встроены непосредственно в октаэдрический скелет кристаллической решетки монтмориллонита вместо Al³⁺ (эффект нонтронитизации). Такая глина остается фазово чистой — на дифрактограмме РФА нет пиков оксидов железа, а железо не образует микроабразивных частиц. Однако поверхностный заряд меняется, влияя на обменную емкость.
+                Ионы Fe²⁺ изоморфно замещают Al³⁺ непосредственно в октаэдрическом каркасе монтмориллонита (эффект нонтронитизации). Железо не образует отдельных минеральных фаз (Fe_балласт = 0). Глина сохраняет превосходную термостойкость и мягкость частиц, пригодна для прецизионных узлов и буровых систем HT-HP.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200 space-y-2">
+              <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+                <ShieldAlert className="w-4 h-4 text-amber-700" />
+                3. Свободные оксиды железа (желтые и красные глины)
+              </div>
+              <p className="text-stone-600 leading-relaxed text-xs">
+                Свободный гётит (желтый) и гематит (красный) присутствуют в виде твердых микро- и наночастиц. Они создают минеральный балласт, снижают прозрачность, окрашивают гели в охристые/кирпичные тона, работают как абразив в прецизионных смазках и катализируют термодеградацию четвертичных аммониевых солей при температурах выше 150°C.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-stone-100/80 border border-stone-300 space-y-2">
+              <div className="flex items-center gap-2 text-stone-900 font-bold text-sm">
+                <ShieldAlert className="w-4 h-4 text-stone-700" />
+                4. Темно-коричневый / черный бентонит (гуматы, битумы, пирит)
+              </div>
+              <p className="text-stone-600 leading-relaxed text-xs">
+                Высокое содержание дисперсного органического углерода (C_org, гуминовые и фульвокислоты) и аутигенных сульфидов железа (пирит FeS₂). Водорастворимые гуматы конкурируют с катионным ПАВ, увеличивают сорбцию ЧАС и действуют как дефлоккулянты в эмульсиях и полимерных клеях. Гели получаются темно-бурыми или черными. Оптимальная ниша — битумные мастики, антикоры и стандартные РУО.
               </p>
             </div>
           </div>
